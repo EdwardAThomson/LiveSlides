@@ -1,0 +1,28 @@
+{
+  "title": "My Presentation",
+  "theme": "dark",
+  "transition": "fade",
+  "assetsBase": "./assets",
+  "slides": [
+    {
+      "id": "title",
+      "src": "slides/01-title.mdx",
+      "layout": "center"
+    },
+    {
+      "id": "content",
+      "src": "slides/02-content.mdx",
+      "layout": "center"
+    },
+    {
+      "id": "demo",
+      "src": "slides/03-demo.mdx",
+      "layout": "split-40-60"
+    },
+    {
+      "id": "closing",
+      "src": "slides/04-closing.mdx",
+      "layout": "center"
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "title": "LiveSlides Demo Deck",
+  "theme": "dark",
+  "transition": "fade",
+  "assetsBase": "./assets",
+  "slides": [
+    {
+      "id": "intro",
+      "src": "slides/00-intro.mdx",
+      "layout": "center"
+    },
+    {
+      "id": "features",
+      "src": "slides/01-features.mdx",
+      "layout": "center"
+    },
+    {
+      "id": "demo",
+      "src": "slides/02-demo.mdx",
+      "layout": "split-40-60"
+    },
+    {
+      "id": "image-example",
+      "type": "image",
+      "src": "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=1600&q=80",
+      "alt": "Team collaboration"
+    },
+    {
+      "id": "outro",
+      "src": "slides/03-outro.mdx",
+      "layout": "center"
+    }
+  ]
+}
