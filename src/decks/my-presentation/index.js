@@ -1,5 +1,6 @@
 // Import deck configuration
 import deckConfig from './deck.json';
+import jokesConfig from './jokes.json';
 
 // Import all MDX slides
 import TitleSlide from './slides/01-title.mdx';
@@ -16,8 +17,10 @@ export const mdxModules = {
 };
 
 export const config = deckConfig;
+export const jokes = jokesConfig;
 
 export default {
   config,
   mdxModules,
+  jokes,
 };

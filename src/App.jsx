@@ -6,8 +6,10 @@ import ImageSlide from './components/slides/ImageSlide';
 import YouTubeSlide from './components/slides/YouTubeSlide';
 import IframeSlide from './components/slides/IframeSlide';
 import MDXSlide from './components/slides/MDXSlide';
+import JokeOverlay from './components/JokeOverlay';
 import useSlideNavigation from './hooks/useSlideNavigation';
 import useKeyboardNav from './hooks/useKeyboardNav';
+import useJokeManager from './hooks/useJokeManager';
 import { processDeck } from './lib/deckLoader';
 import myPresentation from './decks/my-presentation';
 import demoDeck from './decks/demo-deck';
@@ -60,9 +62,13 @@ const demoSlides = [
 function App() {
   const [currentDeck, setCurrentDeck] = useState('hardcoded'); // Start with hardcoded to ensure something renders
   const [slides, setSlides] = useState(demoSlides); // Initialize with hardcoded slides
+  const [jokesConfig, setJokesConfig] = useState(null);
   const [transitionKind, setTransitionKind] = useState('fade');
   const [transitionKey, setTransitionKey] = useState(0);
   const containerRef = useRef(null);
+
+  // Joke manager (only if jokes config exists)
+  const { currentJoke, dismissJoke, preloadedCount } = useJokeManager(jokesConfig || {});
 
   // Load the selected deck
   useEffect(() => {
@@ -77,18 +83,24 @@ function App() {
         case 'my-presentation':
           console.log('Processing my-presentation');
           loadedSlides = processDeck(myPresentation.config, myPresentation.mdxModules);
+          setJokesConfig(myPresentation.jokes);
           console.log('Loaded slides:', loadedSlides);
+          console.log('Loaded jokes:', myPresentation.jokes);
           break;
         case 'demo-deck':
           console.log('Processing demo-deck');
           loadedSlides = processDeck(demoDeck.config, demoDeck.mdxModules);
+          setJokesConfig(demoDeck.jokes);
+          console.log('Loaded jokes:', demoDeck.jokes);
           break;
         case 'hardcoded':
           console.log('Using hardcoded slides');
           loadedSlides = demoSlides;
+          setJokesConfig(null); // No jokes for hardcoded deck
           break;
         default:
           loadedSlides = processDeck(myPresentation.config, myPresentation.mdxModules);
+          setJokesConfig(myPresentation.jokes);
       }
       
       console.log('Setting slides:', loadedSlides);
@@ -268,7 +280,17 @@ function App() {
             🎨 MDX Examples
           </button>
         </div>
+
+        {/* Joke indicator */}
+        {jokesConfig && preloadedCount > 0 && (
+          <div className="mt-2 px-3 py-1.5 rounded-lg bg-purple-500/20 border border-purple-400/30 text-xs">
+            🎭 Jokes: Press <strong>1</strong>, <strong>2</strong>, <strong>3</strong>, or <strong>Q</strong>
+          </div>
+        )}
       </div>
+
+      {/* Joke overlay */}
+      <JokeOverlay joke={currentJoke} onDismiss={dismissJoke} />
     </div>
   );
 }

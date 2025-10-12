@@ -1,0 +1,35 @@
+{
+  "jokes": [
+    {
+      "id": "thinking",
+      "hotkey": "1",
+      "type": "image",
+      "src": "https://media.giphy.com/media/d3mlE7uhX8KFgEmY/giphy.gif",
+      "alt": "Thinking meme",
+      "duration": 2000
+    },
+    {
+      "id": "mind-blown",
+      "hotkey": "2",
+      "type": "gif",
+      "src": "https://media.giphy.com/media/xT0xeJpnrWC4XWblEk/giphy.gif",
+      "alt": "Mind blown",
+      "duration": 2500
+    },
+    {
+      "id": "wow",
+      "hotkey": "3",
+      "type": "text",
+      "text": "🤯 WOW!",
+      "duration": 1500
+    },
+    {
+      "id": "applause",
+      "hotkey": "q",
+      "type": "gif",
+      "src": "https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif",
+      "alt": "Applause",
+      "duration": 2000
+    }
+  ]
+}
