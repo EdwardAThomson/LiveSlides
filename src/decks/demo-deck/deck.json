@@ -17,7 +17,7 @@
     {
       "id": "demo",
       "src": "slides/02-demo.mdx",
-      "layout": "split-40-60"
+      "layout": "center"
     },
     {
       "id": "image-example",
