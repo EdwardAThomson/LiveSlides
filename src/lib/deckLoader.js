@@ -5,23 +5,36 @@
  * @returns {array} - Processed slides array
  */
 export function processDeck(config, mdxModules = {}) {
+  console.log('processDeck called with:', { config, mdxModules });
+  
   const slides = config.slides.map((slideDef) => {
+    console.log('Processing slide:', slideDef);
+    
     // If it's an MDX slide, use the pre-imported module
     if (slideDef.src && slideDef.src.endsWith('.mdx')) {
       const mdxModule = mdxModules[slideDef.id];
+      console.log(`Looking for MDX module with id "${slideDef.id}":`, mdxModule);
       
       if (!mdxModule) {
+        console.error(`MDX module not found for slide: ${slideDef.id}`);
+        console.error('Available modules:', Object.keys(mdxModules));
         return {
           id: slideDef.id,
           type: 'error',
-          error: `MDX module not found for slide: ${slideDef.id}`,
+          error: `MDX module not found for slide: ${slideDef.id}. Available: ${Object.keys(mdxModules).join(', ')}`,
         };
       }
+
+      console.log('MDX module found:', mdxModule);
+      console.log('MDX module.default:', mdxModule.default);
+      
+      // MDX modules can export as default OR as the module itself
+      const Component = mdxModule.default || mdxModule;
 
       return {
         id: slideDef.id,
         type: 'mdx',
-        Component: mdxModule.default,
+        Component: Component,
         layout: slideDef.layout || 'center',
         notes: mdxModule.frontmatter?.notes || '',
         frontmatter: mdxModule.frontmatter || {},
@@ -35,6 +48,7 @@ export function processDeck(config, mdxModules = {}) {
     };
   });
 
+  console.log('Processed slides:', slides);
   return slides;
 }
 

@@ -78,7 +78,7 @@ src/
 
 ### Your presentation is ready to edit!
 
-**Start here:** `decks/my-presentation/`
+**Start here:** `src/decks/my-presentation/`
 
 This folder contains a template presentation with 4 slides:
 1. **Title slide** - Edit your name and topic
@@ -88,14 +88,14 @@ This folder contains a template presentation with 4 slides:
 
 ### How to edit:
 
-1. Open `decks/my-presentation/slides/01-title.mdx`
+1. Open `src/decks/my-presentation/slides/01-title.mdx`
 2. Edit the Markdown content
 3. Save the file
 4. The browser will auto-reload with your changes!
 
 ### File structure:
 ```
-decks/my-presentation/
+src/decks/my-presentation/
 ├── index.js              # Don't touch - imports all slides
 ├── deck.json             # Slide order and layouts
 ├── slides/
@@ -114,4 +114,4 @@ decks/my-presentation/
 3. Import it in `index.js`
 4. Add it to the `mdxModules` object
 
-See `decks/demo-deck/` for more examples of what's possible!
+See `src/decks/demo-deck/` for more examples of what's possible!

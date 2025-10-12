@@ -4,7 +4,6 @@ import mdx from '@mdx-js/rollup'
 import remarkFrontmatter from 'remark-frontmatter'
 import remarkMdxFrontmatter from 'remark-mdx-frontmatter'
 import remarkGfm from 'remark-gfm'
-import path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -18,9 +17,4 @@ export default defineConfig({
     })},
     react(),
   ],
-  resolve: {
-    alias: {
-      '@decks': path.resolve(__dirname, './decks'),
-    },
-  },
 })

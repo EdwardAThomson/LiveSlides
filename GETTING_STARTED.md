@@ -4,7 +4,7 @@
 
 ### Step 1: Open Your Presentation Files
 
-Navigate to: **`decks/my-presentation/slides/`**
+Navigate to: **`src/decks/my-presentation/slides/`**
 
 You'll find 4 template slides ready to edit:
 - `01-title.mdx` - Your opening slide
@@ -190,7 +190,7 @@ export const mdxModules = {
 1. Edit all 4 template slides with your content
 2. Add your own images to `assets/images/`
 3. Create additional slides as needed
-4. Check out `decks/demo-deck/` for more examples
+4. Check out `src/decks/demo-deck/` for more examples
 5. When ready, press **F** for fullscreen and present!
 
 ## 🎬 Recording for YouTube

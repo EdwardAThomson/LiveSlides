@@ -9,8 +9,8 @@ import MDXSlide from './components/slides/MDXSlide';
 import useSlideNavigation from './hooks/useSlideNavigation';
 import useKeyboardNav from './hooks/useKeyboardNav';
 import { processDeck } from './lib/deckLoader';
-import myPresentation from '@decks/my-presentation';
-import demoDeck from '@decks/demo-deck';
+import myPresentation from './decks/my-presentation';
+import demoDeck from './decks/demo-deck';
 
 // Demo deck data
 const demoSlides = [

@@ -1,4 +1,3 @@
-import { MDXProvider } from '@mdx-js/react';
 import { mdxComponents } from '../../lib/mdxComponents';
 import SlideLayout from '../SlideLayout';
 
@@ -14,11 +13,9 @@ export default function MDXSlide({ Component, layout = 'center' }) {
 
   return (
     <SlideLayout layout={layout}>
-      <MDXProvider components={mdxComponents}>
-        <div className="w-full text-white">
-          <Component />
-        </div>
-      </MDXProvider>
+      <div className="w-full text-white">
+        <Component components={mdxComponents} />
+      </div>
     </SlideLayout>
   );
 }
