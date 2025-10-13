@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import SlideChrome from './components/SlideChrome';
 import Transition from './components/Transition';
 import TextSlide from './components/slides/TextSlide';
@@ -161,7 +162,12 @@ function App() {
   };
 
   const toggleTransition = () => {
-    setTransitionKind((k) => (k === 'fade' ? 'slide' : 'fade'));
+    const transitions = ['fade', 'slide', 'scale', 'slideUp'];
+    setTransitionKind((k) => {
+      const currentIndex = transitions.indexOf(k);
+      const nextIndex = (currentIndex + 1) % transitions.length;
+      return transitions[nextIndex];
+    });
   };
 
   useKeyboardNav({
@@ -205,7 +211,30 @@ function App() {
   };
 
   return (
-    <div ref={containerRef} className="w-screen h-screen" onClick={handleClick}>
+    <div 
+      ref={containerRef} 
+      className="w-screen h-screen" 
+      onClick={handleClick}
+      onTouchStart={(e) => {
+        const touch = e.touches[0];
+        containerRef.current.touchStartX = touch.clientX;
+      }}
+      onTouchEnd={(e) => {
+        const touch = e.changedTouches[0];
+        const startX = containerRef.current.touchStartX;
+        const endX = touch.clientX;
+        const diff = startX - endX;
+        
+        // Swipe left (next) or right (prev)
+        if (Math.abs(diff) > 50) {
+          if (diff > 0 && canGoNext) {
+            handleNext();
+          } else if (diff < 0 && canGoPrev) {
+            handlePrev();
+          }
+        }
+      }}
+    >
       <SlideChrome
         currentIndex={currentIndex}
         totalSlides={totalSlides}
@@ -224,10 +253,12 @@ function App() {
         canGoPrev={canGoPrev}
         canGoNext={canGoNext}
       >
-        {/* Keyed transition wrapper to retrigger animation */}
-        <Transition key={`${currentSlide.id}-${transitionKey}`} kind={transitionKind} active>
-          {renderSlide(currentSlide)}
-        </Transition>
+        {/* AnimatePresence enables exit animations */}
+        <AnimatePresence mode="wait">
+          <Transition key={`${currentSlide.id}-${transitionKey}`} kind={transitionKind} active>
+            {renderSlide(currentSlide)}
+          </Transition>
+        </AnimatePresence>
       </SlideChrome>
 
       {/* Top controls */}

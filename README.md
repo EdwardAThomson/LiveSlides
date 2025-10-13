@@ -16,13 +16,26 @@ npm run build
 ```
 
 **👉 [Read the Getting Started Guide](./GETTING_STARTED.md)** for a complete walkthrough!
+
+##  Transitions
+
+Press **S** to cycle through 4 smooth transition styles:
+- **Fade** - Classic crossfade
+- **Slide** - Slides in from right, exits left
+- **Scale** - Zooms in/out with fade
+- **SlideUp** - Bounces up with spring physics
+
+All transitions use Framer Motion for buttery-smooth 60fps animations!
+
 ##  Keyboard Shortcuts
 
 - **←/→ or Space** - Navigate slides
 - **F** - Toggle fullscreen
-- **S** - Switch transition style (fade/slide)
+- **S** - Cycle transitions (fade → slide → scale → slideUp)
+- **1, 2, 3, Q** - Trigger joke overlays (when available)
 - **Escape** - Exit fullscreen
 - **Click** - Advance to next slide
+- **Swipe** - Navigate on touch devices
 
 ##  Project Structure
 
@@ -41,12 +54,11 @@ src/
 │   └── useKeyboardNav.js     # Keyboard handling
 └── App.jsx                   # Main app component
 ```
-##  Current Status: Phase 2 Complete 
+##  Current Status: Phase 3 Complete ✨
 
 **Phase 1 - Core Engine:**
 -  All 4 slide types (Text, Image, YouTube, Iframe)
 -  Keyboard navigation & click-to-advance
--  Fade & slide transitions
 -  Fullscreen support
 
 **Phase 2 - MDX & Deck Loading:**
@@ -54,12 +66,19 @@ src/
 -  MDX primitives (Grid, Block, Media, Iframe, YouTube, Callout)
 -  Layout system (center, split-40-60, split-60-40, three-up, full)
 -  Frontmatter support for slide notes
--  Toggle between demo deck and MDX deck
+-  Multiple deck switching
 
-**Next Phase (Sprint 3):**
--  Joke overlays with hotkeys
+**Phase 3 - Polish & Interactivity:**
+-  Joke overlays with hotkeys (1, 2, 3, Q)
+-  Framer Motion animations (4 transition types)
+-  Stagger animations for MDX content
+-  Touch/swipe gesture support
+-  Smooth exit animations
+
+**Next Phase (Sprint 4):**
 -  Presenter view with notes & timer
--  Framer Motion animations
+-  Tauri desktop build
+-  Advanced slide types (Terminal, Code highlighting, Charts)
 
 ##  Documentation
 
@@ -72,7 +91,7 @@ src/
 - **Vite** - Build tool
 - **Tailwind CSS** - Styling
 - **MDX** - Markdown with JSX for slide authoring
-- **Pure CSS** - Transitions (Framer Motion in Phase 3)
+- **Framer Motion** - Smooth animations & transitions
 
 ## 🎯 Quick Start: Build Your Presentation
 
