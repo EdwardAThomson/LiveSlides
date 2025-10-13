@@ -19,11 +19,17 @@ npm run build
 
 ##  Transitions
 
-Press **S** to cycle through 4 smooth transition styles:
+Press **S** to cycle through **10 smooth transition styles**:
 - **Fade** - Classic crossfade
 - **Slide** - Slides in from right, exits left
 - **Scale** - Zooms in/out with fade
 - **SlideUp** - Bounces up with spring physics
+- **Zoom** - Dramatic zoom in/out effect
+- **Flip** - 3D card flip animation
+- **Blur** - Fade with blur effect
+- **Rotate** - Subtle rotation with scale
+- **Bounce** - Playful bouncy entrance
+- **SlideDown** - Bounces down with spring physics
 
 All transitions use Framer Motion for buttery-smooth 60fps animations!
 
@@ -31,7 +37,7 @@ All transitions use Framer Motion for buttery-smooth 60fps animations!
 
 - **←/→ or Space** - Navigate slides
 - **F** - Toggle fullscreen
-- **S** - Cycle transitions (fade → slide → scale → slideUp)
+- **S** - Cycle through 10 transitions (fade → slide → scale → ... → slideDown)
 - **1, 2, 3, Q** - Trigger joke overlays (when available)
 - **Escape** - Exit fullscreen
 - **Click** - Advance to next slide

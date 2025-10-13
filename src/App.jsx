@@ -162,7 +162,18 @@ function App() {
   };
 
   const toggleTransition = () => {
-    const transitions = ['fade', 'slide', 'scale', 'slideUp'];
+    const transitions = [
+      'fade', 
+      'slide', 
+      'scale', 
+      'slideUp', 
+      'zoom', 
+      'flip', 
+      'blur', 
+      'rotate', 
+      'bounce', 
+      'slideDown'
+    ];
     setTransitionKind((k) => {
       const currentIndex = transitions.indexOf(k);
       const nextIndex = (currentIndex + 1) % transitions.length;
