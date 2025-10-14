@@ -6,7 +6,14 @@
       "type": "image",
       "src": "https://media.giphy.com/media/d3mlE7uhX8KFgEmY/giphy.gif",
       "alt": "Thinking meme",
-      "duration": 2000
+      "displayDuration": 2000,
+      "animation": {
+        "entry": "bounce",
+        "exit": "shrink",
+        "duration": 600,
+        "easing": "spring"
+      },
+      "size": "large"
     },
     {
       "id": "mind-blown",
@@ -14,14 +21,35 @@
       "type": "gif",
       "src": "https://media.giphy.com/media/xT0xeJpnrWC4XWblEk/giphy.gif",
       "alt": "Mind blown",
-      "duration": 2500
+      "displayDuration": 2500,
+      "animation": {
+        "entry": "zoom",
+        "exit": "zoomOut",
+        "duration": 700,
+        "easing": "spring"
+      },
+      "size": "large",
+      "maxWidth": "90vw",
+      "maxHeight": "90vh",
+      "effects": {
+        "blur": false,
+        "backdrop": 0.1
+      }
     },
     {
       "id": "wow",
       "hotkey": "3",
       "type": "text",
       "text": "🤯 WOW!",
-      "duration": 1500
+      "displayDuration": 1500,
+      "animation": {
+        "entry": "slideInBottom",
+        "exit": "slideOutTop",
+        "duration": 500,
+        "easing": "bounce"
+      },
+      "position": "center",
+      "size": "medium"
     },
     {
       "id": "applause",
@@ -29,7 +57,15 @@
       "type": "gif",
       "src": "https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif",
       "alt": "Applause",
-      "duration": 2000
+      "displayDuration": 2000,
+      "animation": {
+        "entry": "slideInRight",
+        "exit": "slideOutRight",
+        "duration": 400,
+        "easing": "easeOut"
+      },
+      "position": "bottom-right",
+      "size": "small"
     }
   ]
 }

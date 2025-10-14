@@ -386,6 +386,331 @@ export function useJokeManager(jokesConfigPath) {
 
 ---
 
+## Phase 3.5: Enhanced Joke Animations (Sprint 3.5)
+
+### Goal
+Extend the joke system with configurable Framer Motion animations, positioning, and timing controls.
+
+### Enhancement Overview
+Transform jokes from simple fade/scale overlays into a rich animation system with:
+- **Multiple entry/exit animations** (slide, bounce, flip, spin, zoom, etc.)
+- **Flexible positioning** (center, corners, custom coordinates)
+- **Size variants** (small, medium, large, fullscreen)
+- **Advanced effects** (rotation, shake, blur, spring physics)
+- **Configurable timing** (duration, delay, easing functions)
+
+### Updated Joke Configuration Schema
+```json
+{
+  "jokes": [
+    {
+      "id": "example",
+      "hotkey": "1",
+      "type": "image",
+      "src": "./assets/joke.gif",
+      "alt": "Funny joke",
+      
+      // NEW: Animation configuration
+      "animation": {
+        "entry": "slideInLeft",        // Entry animation type
+        "exit": "slideOutRight",        // Exit animation type
+        "duration": 500,                // Animation duration (ms)
+        "easing": "spring",             // Easing function
+        "delay": 0                      // Delay before showing (ms)
+      },
+      
+      // NEW: Position configuration
+      "position": "center",             // Preset or custom
+      "customPosition": {               // Optional custom positioning
+        "x": "50%",
+        "y": "50%"
+      },
+      
+      // NEW: Size configuration
+      "size": "large",                  // small | medium | large | fullscreen
+      "maxWidth": "80vw",               // Optional custom max width
+      "maxHeight": "80vh",              // Optional custom max height
+      
+      // NEW: Visual effects
+      "rotation": 0,                    // Rotation in degrees
+      "effects": {
+        "shake": false,                 // Shake effect on entry
+        "blur": false,                  // Blur background more
+        "backdrop": 0.3,                // Backdrop opacity (0-1, default 0.3)
+        "backdropColor": "black",       // Backdrop color
+        "shadow": "2xl"                 // Shadow size
+      },
+      
+      // Existing fields
+      "displayDuration": 2000,          // How long to show (ms)
+      "loop": true,                     // For videos
+      "muted": true                     // For videos
+    }
+  ]
+}
+```
+
+### Animation Types
+
+#### Entry Animations
+- `fade` - Simple opacity fade in
+- `scale` - Scale up from 0.8 to 1.0
+- `slideInLeft` - Slide in from left edge
+- `slideInRight` - Slide in from right edge
+- `slideInTop` - Slide in from top edge
+- `slideInBottom` - Slide in from bottom edge
+- `bounce` - Bouncy entrance with spring physics
+- `flip` - 3D flip animation
+- `spin` - Rotate while fading in
+- `zoom` - Dramatic zoom from small
+- `elastic` - Elastic spring effect
+- `shake` - Shake while appearing
+
+#### Exit Animations
+- `fade` - Simple opacity fade out
+- `scale` - Scale down to 0.8
+- `slideOutLeft` - Slide out to left edge
+- `slideOutRight` - Slide out to right edge
+- `slideOutTop` - Slide out to top edge
+- `slideOutBottom` - Slide out to bottom edge
+- `shrink` - Shrink to nothing
+- `spinOut` - Rotate while fading out
+- `zoomOut` - Zoom out dramatically
+
+#### Easing Functions
+- `linear` - No easing
+- `easeIn` - Slow start
+- `easeOut` - Slow end
+- `easeInOut` - Slow start and end
+- `spring` - Spring physics (bouncy)
+- `bounce` - Bounce effect
+- `anticipate` - Pull back before moving
+
+### Position Presets
+- `center` - Centered (default)
+- `top-left` - Upper left corner
+- `top-right` - Upper right corner
+- `bottom-left` - Lower left corner
+- `bottom-right` - Lower right corner
+- `top` - Top center
+- `bottom` - Bottom center
+- `left` - Left center
+- `right` - Right center
+
+### Size Presets
+- `small` - 30% of viewport
+- `medium` - 50% of viewport
+- `large` - 70% of viewport (default)
+- `fullscreen` - 100% of viewport
+
+### Implementation Changes
+
+#### Updated `JokeOverlay.jsx`
+```jsx
+import { motion, AnimatePresence } from 'framer-motion';
+import { getAnimationVariants, getPositionStyles, getSizeStyles } from '../lib/jokeAnimations';
+
+export default function JokeOverlay({ joke, onDismiss }) {
+  if (!joke) return null;
+
+  const animation = joke.animation || {};
+  const variants = getAnimationVariants(
+    animation.entry || 'fade',
+    animation.exit || 'fade',
+    animation.easing || 'easeInOut'
+  );
+  
+  const positionStyles = getPositionStyles(
+    joke.position || 'center',
+    joke.customPosition
+  );
+  
+  const sizeStyles = getSizeStyles(
+    joke.size || 'large',
+    joke.maxWidth,
+    joke.maxHeight
+  );
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onDismiss}
+      >
+        <motion.div
+          className="absolute"
+          style={{
+            ...positionStyles,
+            ...sizeStyles,
+            rotate: joke.rotation || 0
+          }}
+          variants={variants}
+          initial="initial"
+          animate="animate"
+          exit="exit"
+          transition={{
+            duration: (animation.duration || 500) / 1000,
+            delay: (animation.delay || 0) / 1000
+          }}
+        >
+          {/* Render joke content */}
+          {renderJokeContent(joke)}
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+```
+
+#### New File: `lib/jokeAnimations.js`
+```javascript
+// Animation variant definitions for Framer Motion
+export function getAnimationVariants(entry, exit, easing) {
+  const easingMap = {
+    linear: [0, 0, 1, 1],
+    easeIn: [0.4, 0, 1, 1],
+    easeOut: [0, 0, 0.2, 1],
+    easeInOut: [0.4, 0, 0.2, 1],
+    spring: { type: 'spring', stiffness: 300, damping: 20 },
+    bounce: { type: 'spring', stiffness: 400, damping: 10 },
+    anticipate: { type: 'spring', stiffness: 200, damping: 15 }
+  };
+
+  return {
+    initial: getEntryInitial(entry),
+    animate: getEntryAnimate(entry),
+    exit: getExitState(exit)
+  };
+}
+
+// Position calculation helpers
+export function getPositionStyles(position, customPosition) {
+  const presets = {
+    center: { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' },
+    'top-left': { top: '5%', left: '5%' },
+    'top-right': { top: '5%', right: '5%' },
+    'bottom-left': { bottom: '5%', left: '5%' },
+    'bottom-right': { bottom: '5%', right: '5%' },
+    top: { top: '5%', left: '50%', transform: 'translateX(-50%)' },
+    bottom: { bottom: '5%', left: '50%', transform: 'translateX(-50%)' },
+    left: { top: '50%', left: '5%', transform: 'translateY(-50%)' },
+    right: { top: '50%', right: '5%', transform: 'translateY(-50%)' }
+  };
+
+  if (customPosition) {
+    return { top: customPosition.y, left: customPosition.x };
+  }
+
+  return presets[position] || presets.center;
+}
+
+// Size calculation helpers
+export function getSizeStyles(size, maxWidth, maxHeight) {
+  const presets = {
+    small: { maxWidth: '30vw', maxHeight: '30vh' },
+    medium: { maxWidth: '50vw', maxHeight: '50vh' },
+    large: { maxWidth: '70vw', maxHeight: '70vh' },
+    fullscreen: { width: '100vw', height: '100vh' }
+  };
+
+  const base = presets[size] || presets.large;
+  
+  return {
+    ...base,
+    ...(maxWidth && { maxWidth }),
+    ...(maxHeight && { maxHeight })
+  };
+}
+```
+
+### Migration Strategy
+1. **Backward compatible** - Existing jokes.json files work without changes
+2. **Gradual adoption** - Add animation configs to jokes one at a time
+3. **Sensible defaults** - If animation config missing, use current behavior (fade + scale)
+4. **Validation** - Warn in console if invalid animation type specified
+
+### Example Joke Configurations
+
+#### Dramatic Entrance
+```json
+{
+  "id": "boom",
+  "hotkey": "1",
+  "type": "image",
+  "src": "./assets/explosion.gif",
+  "animation": {
+    "entry": "zoom",
+    "exit": "shrink",
+    "duration": 600,
+    "easing": "spring"
+  },
+  "size": "fullscreen",
+  "displayDuration": 2000
+}
+```
+
+#### Corner Notification
+```json
+{
+  "id": "notification",
+  "hotkey": "2",
+  "type": "text",
+  "text": "🔔 New message!",
+  "animation": {
+    "entry": "slideInRight",
+    "exit": "slideOutRight",
+    "duration": 400,
+    "easing": "easeOut"
+  },
+  "position": "top-right",
+  "size": "small",
+  "displayDuration": 1500
+}
+```
+
+#### Spinning Joke
+```json
+{
+  "id": "spin",
+  "hotkey": "3",
+  "type": "image",
+  "src": "./assets/dizzy.gif",
+  "animation": {
+    "entry": "spin",
+    "exit": "spinOut",
+    "duration": 800,
+    "easing": "easeInOut"
+  },
+  "rotation": 15,
+  "displayDuration": 2000
+}
+```
+
+### Testing Requirements
+- [ ] All animation types work smoothly
+- [ ] Position presets place jokes correctly
+- [ ] Size presets scale appropriately
+- [ ] Custom positioning works
+- [ ] Rotation applies correctly
+- [ ] Easing functions feel natural
+- [ ] Backward compatibility maintained
+- [ ] Performance stays at 60fps
+- [ ] Works across different screen sizes
+
+### Deliverables
+- [ ] `jokeAnimations.js` utility library
+- [ ] Updated `JokeOverlay.jsx` with Framer Motion
+- [ ] Animation variant definitions for all types
+- [ ] Position and size calculation helpers
+- [ ] Updated demo jokes.json with examples
+- [ ] Documentation for joke configuration
+- [ ] Migration guide for existing jokes
+
+---
+
 ## Phase 4: Desktop Wrapper (Sprint 4)
 
 ### Goal
