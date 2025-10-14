@@ -25,7 +25,14 @@ function getEntryInitial(animationType) {
     spin: { opacity: 0, rotate: -180, scale: 0.5 },
     zoom: { opacity: 0, scale: 0.1 },
     elastic: { opacity: 0, scale: 0.5 },
-    shake: { opacity: 0, x: -50 }
+    shake: { opacity: 0, x: -50 },
+    // Combination animations
+    bounceRotate: { opacity: 0, scale: 0.3, y: -100, rotate: -180 },
+    slideScale: { opacity: 0, x: '-100vw', scale: 0.5 },
+    flipSlide: { opacity: 0, rotateY: -90, x: '50vw' },
+    spinZoom: { opacity: 0, rotate: -360, scale: 0.1 },
+    shakeScale: { opacity: 0, x: -50, scale: 0.5 },
+    slideRotate: { opacity: 0, x: '-100vw', rotate: -90 }
   };
 
   return animations[animationType] || animations.fade;
@@ -47,7 +54,14 @@ function getEntryAnimate(animationType) {
     spin: { opacity: 1, rotate: 0, scale: 1 },
     zoom: { opacity: 1, scale: 1 },
     elastic: { opacity: 1, scale: 1 },
-    shake: { opacity: 1, x: 0 }
+    shake: { opacity: 1, x: 0 },
+    // Combination animations
+    bounceRotate: { opacity: 1, scale: 1, y: 0, rotate: 0 },
+    slideScale: { opacity: 1, x: 0, scale: 1 },
+    flipSlide: { opacity: 1, rotateY: 0, x: 0 },
+    spinZoom: { opacity: 1, rotate: 0, scale: 1 },
+    shakeScale: { opacity: 1, x: 0, scale: 1 },
+    slideRotate: { opacity: 1, x: 0, rotate: 0 }
   };
 
   return animations[animationType] || animations.fade;
@@ -66,7 +80,14 @@ function getExitState(animationType) {
     slideOutBottom: { opacity: 0, y: '100vh' },
     shrink: { opacity: 0, scale: 0 },
     spinOut: { opacity: 0, rotate: 180, scale: 0.5 },
-    zoomOut: { opacity: 0, scale: 2 }
+    zoomOut: { opacity: 0, scale: 2 },
+    // Combination animations
+    bounceRotateOut: { opacity: 0, scale: 0.3, y: 100, rotate: 180 },
+    slideScaleOut: { opacity: 0, x: '100vw', scale: 0.5 },
+    flipSlideOut: { opacity: 0, rotateY: 90, x: '-50vw' },
+    spinZoomOut: { opacity: 0, rotate: 360, scale: 2 },
+    shakeScaleOut: { opacity: 0, x: 50, scale: 0.5 },
+    slideRotateOut: { opacity: 0, x: '100vw', rotate: 90 }
   };
 
   return animations[animationType] || animations.fade;
@@ -251,12 +272,14 @@ export function validateAnimationConfig(animationConfig) {
 
   const validEntryTypes = [
     'fade', 'scale', 'slideInLeft', 'slideInRight', 'slideInTop', 
-    'slideInBottom', 'bounce', 'flip', 'spin', 'zoom', 'elastic', 'shake'
+    'slideInBottom', 'bounce', 'flip', 'spin', 'zoom', 'elastic', 'shake',
+    'bounceRotate', 'slideScale', 'flipSlide', 'spinZoom', 'shakeScale', 'slideRotate'
   ];
 
   const validExitTypes = [
     'fade', 'scale', 'slideOutLeft', 'slideOutRight', 'slideOutTop', 
-    'slideOutBottom', 'shrink', 'spinOut', 'zoomOut'
+    'slideOutBottom', 'shrink', 'spinOut', 'zoomOut',
+    'bounceRotateOut', 'slideScaleOut', 'flipSlideOut', 'spinZoomOut', 'shakeScaleOut', 'slideRotateOut'
   ];
 
   const validEasings = [

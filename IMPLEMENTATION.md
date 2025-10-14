@@ -453,6 +453,8 @@ Transform jokes from simple fade/scale overlays into a rich animation system wit
 ### Animation Types
 
 #### Entry Animations
+
+**Basic:**
 - `fade` - Simple opacity fade in
 - `scale` - Scale up from 0.8 to 1.0
 - `slideInLeft` - Slide in from left edge
@@ -466,7 +468,17 @@ Transform jokes from simple fade/scale overlays into a rich animation system wit
 - `elastic` - Elastic spring effect
 - `shake` - Shake while appearing
 
+**Combinations:**
+- `bounceRotate` - Bounce + rotation
+- `slideScale` - Slide + scale
+- `flipSlide` - Flip + slide
+- `spinZoom` - Spin + zoom
+- `shakeScale` - Shake + scale
+- `slideRotate` - Slide + rotation
+
 #### Exit Animations
+
+**Basic:**
 - `fade` - Simple opacity fade out
 - `scale` - Scale down to 0.8
 - `slideOutLeft` - Slide out to left edge
@@ -476,6 +488,14 @@ Transform jokes from simple fade/scale overlays into a rich animation system wit
 - `shrink` - Shrink to nothing
 - `spinOut` - Rotate while fading out
 - `zoomOut` - Zoom out dramatically
+
+**Combinations:**
+- `bounceRotateOut` - Bounce + rotation
+- `slideScaleOut` - Slide + scale
+- `flipSlideOut` - Flip + slide
+- `spinZoomOut` - Spin + zoom
+- `shakeScaleOut` - Shake + scale
+- `slideRotateOut` - Slide + rotation
 
 #### Easing Functions
 - `linear` - No easing

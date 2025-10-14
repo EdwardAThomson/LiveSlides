@@ -57,6 +57,8 @@ Add animation configuration for custom effects:
 ```
 
 #### Entry Animation Types
+
+**Basic Animations:**
 - `fade` - Simple opacity fade in
 - `scale` - Scale up from 0.8 to 1.0
 - `slideInLeft` - Slide in from left edge
@@ -70,7 +72,17 @@ Add animation configuration for custom effects:
 - `elastic` - Elastic spring effect
 - `shake` - Shake while appearing
 
+**Combination Animations:**
+- `bounceRotate` - Bounce + rotation combined
+- `slideScale` - Slide from left + scale
+- `flipSlide` - 3D flip + slide from right
+- `spinZoom` - Full rotation + zoom
+- `shakeScale` - Shake + scale combined
+- `slideRotate` - Slide from left + rotation
+
 #### Exit Animation Types
+
+**Basic Animations:**
 - `fade` - Simple opacity fade out
 - `scale` - Scale down to 0.8
 - `slideOutLeft` - Slide out to left edge
@@ -80,6 +92,14 @@ Add animation configuration for custom effects:
 - `shrink` - Shrink to nothing
 - `spinOut` - Rotate while fading out
 - `zoomOut` - Zoom out dramatically
+
+**Combination Animations:**
+- `bounceRotateOut` - Bounce down + rotation
+- `slideScaleOut` - Slide to right + scale down
+- `flipSlideOut` - 3D flip + slide to left
+- `spinZoomOut` - Full rotation + zoom out
+- `shakeScaleOut` - Shake + scale down
+- `slideRotateOut` - Slide to right + rotation
 
 #### Easing Functions
 - `linear` - No easing
@@ -277,6 +297,46 @@ Add animation configuration for custom effects:
   "effects": {
     "backdrop": 0
   }
+}
+```
+
+### 7. Combination Animation - Bounce & Rotate
+
+```json
+{
+  "id": "dynamic",
+  "hotkey": "7",
+  "type": "image",
+  "src": "./assets/star.gif",
+  "displayDuration": 2000,
+  "animation": {
+    "entry": "bounceRotate",
+    "exit": "spinZoomOut",
+    "duration": 800,
+    "easing": "spring"
+  },
+  "position": "center",
+  "size": "medium"
+}
+```
+
+### 8. Combination Animation - Flip & Slide
+
+```json
+{
+  "id": "flippy",
+  "hotkey": "8",
+  "type": "text",
+  "text": "✨ Amazing!",
+  "displayDuration": 1500,
+  "animation": {
+    "entry": "flipSlide",
+    "exit": "flipSlideOut",
+    "duration": 600,
+    "easing": "easeInOut"
+  },
+  "position": "center",
+  "size": "large"
 }
 ```
 
