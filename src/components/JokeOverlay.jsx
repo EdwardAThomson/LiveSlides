@@ -84,7 +84,7 @@ export default function JokeOverlay({ joke, onDismiss }) {
 
   // Determine backdrop configuration
   const backdropBlur = joke.effects?.blur ? 'backdrop-blur-lg' : ''; // No blur by default
-  const backdropOpacity = joke.effects?.backdrop ?? 0.3; // Default to 30% opacity (was 80%)
+  const backdropOpacity = joke.effects?.backdrop ?? 0; // Default to 0% opacity (transparent)
   const backdropColor = joke.effects?.backdropColor || 'black';
 
   return (
