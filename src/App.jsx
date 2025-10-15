@@ -8,6 +8,7 @@ import YouTubeSlide from './components/slides/YouTubeSlide';
 import IframeSlide from './components/slides/IframeSlide';
 import MDXSlide from './components/slides/MDXSlide';
 import JokeOverlay from './components/JokeOverlay';
+import DeckSelector from './components/DeckSelector';
 import useSlideNavigation from './hooks/useSlideNavigation';
 import useKeyboardNav from './hooks/useKeyboardNav';
 import useJokeManager from './hooks/useJokeManager';
@@ -16,6 +17,28 @@ import myPresentation from './decks/my-presentation';
 import demoDeck from './decks/demo-deck';
 import quickDemo from './decks/quick-demo';
 
+
+// Available decks configuration
+const availableDecks = [
+  {
+    id: 'quick-demo',
+    name: 'Quick Demo',
+    icon: '⚡',
+    description: 'Fast overview of features',
+  },
+  {
+    id: 'my-presentation',
+    name: 'My Presentation',
+    icon: '📝',
+    description: 'Custom presentation deck',
+  },
+  {
+    id: 'demo-deck',
+    name: 'MDX Examples',
+    icon: '🎨',
+    description: 'MDX components showcase',
+  },
+];
 
 function App() {
   const [currentDeck, setCurrentDeck] = useState('quick-demo'); // Start with quick-demo
@@ -234,60 +257,25 @@ function App() {
       </SlideChrome>
 
       {/* Top controls */}
-      <div className="absolute top-4 left-4 flex flex-col gap-2 text-xs text-white/70 z-50">
-        <div className="flex gap-2">
-          <span className="px-3 py-1.5 rounded-lg bg-white/10 backdrop-blur-sm">
-            Transition: <strong>{transitionKind}</strong> (press S)
-          </span>
-        </div>
+      <div className="absolute top-4 left-4 flex flex-col gap-3 z-50">
+        {/* Deck Selector */}
+        <DeckSelector 
+          decks={availableDecks}
+          currentDeck={currentDeck}
+          onSelectDeck={(deckId) => {
+            setCurrentDeck(deckId);
+          }}
+        />
         
-        {/* Deck switcher */}
-        <div className="flex gap-2">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setCurrentDeck('quick-demo');
-            }}
-            className={`px-3 py-1.5 rounded-lg backdrop-blur-sm transition-colors ${
-              currentDeck === 'quick-demo' 
-                ? 'bg-green-500/40 border border-green-400' 
-                : 'bg-white/10 hover:bg-white/20'
-            }`}
-          >
-            ⚡ Quick Demo
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setCurrentDeck('my-presentation');
-            }}
-            className={`px-3 py-1.5 rounded-lg backdrop-blur-sm transition-colors ${
-              currentDeck === 'my-presentation' 
-                ? 'bg-blue-500/40 border border-blue-400' 
-                : 'bg-white/10 hover:bg-white/20'
-            }`}
-          >
-            📝 My Presentation
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setCurrentDeck('demo-deck');
-            }}
-            className={`px-3 py-1.5 rounded-lg backdrop-blur-sm transition-colors ${
-              currentDeck === 'demo-deck' 
-                ? 'bg-blue-500/40 border border-blue-400' 
-                : 'bg-white/10 hover:bg-white/20'
-            }`}
-          >
-            🎨 MDX Examples
-          </button>
-        </div>
+        {/* Transition indicator */}
+        <span className="px-3 py-1.5 rounded-lg bg-white/10 backdrop-blur-sm text-xs text-white/70">
+          Transition: <strong className="text-white">{transitionKind}</strong> (press S)
+        </span>
 
         {/* Joke indicator */}
         {jokesConfig && preloadedCount > 0 && (
-          <div className="mt-2 px-3 py-1.5 rounded-lg bg-purple-500/20 border border-purple-400/30 text-xs">
-            🎭 Jokes: Press <strong>1</strong>, <strong>2</strong>, <strong>3</strong>, or <strong>Q</strong>
+          <div className="px-3 py-1.5 rounded-lg bg-purple-500/20 border border-purple-400/30 text-xs text-white/70">
+            🎭 Jokes: Press <strong className="text-white">1</strong>, <strong className="text-white">2</strong>, <strong className="text-white">3</strong>, or <strong className="text-white">Q</strong>
           </div>
         )}
       </div>
