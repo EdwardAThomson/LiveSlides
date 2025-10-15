@@ -1,33 +1,28 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 
-export default function useSlideNavigation(totalSlides, resetKey) {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  
-  // Reset to 0 when resetKey changes (e.g., deck switch)
-  useEffect(() => {
-    setCurrentIndex(0);
-  }, [resetKey]);
-
+/**
+ * Hook that provides slide navigation logic without managing state
+ * State is managed by the parent component for better control
+ */
+export default function useSlideNavigation(currentIndex, setCurrentIndex, totalSlides) {
   const next = useCallback(() => {
     setCurrentIndex((prev) => Math.min(prev + 1, totalSlides - 1));
-  }, [totalSlides]);
+  }, [setCurrentIndex, totalSlides]);
 
   const prev = useCallback(() => {
     setCurrentIndex((prev) => Math.max(prev - 1, 0));
-  }, []);
+  }, [setCurrentIndex]);
 
   const goTo = useCallback((index) => {
     if (index >= 0 && index < totalSlides) {
       setCurrentIndex(index);
     }
-  }, [totalSlides]);
+  }, [setCurrentIndex, totalSlides]);
 
   const canGoNext = currentIndex < totalSlides - 1;
   const canGoPrev = currentIndex > 0;
 
   return {
-    currentIndex,
-    totalSlides,
     next,
     prev,
     goTo,

@@ -48,12 +48,29 @@ function App() {
   const [transitionKey, setTransitionKey] = useState(0);
   const containerRef = useRef(null);
   
-  // Track slide position for each deck
-  const deckPositions = useRef({
+  // Track slide position for each deck - this is our source of truth
+  const [deckPositions, setDeckPositions] = useState({
     'quick-demo': 0,
     'my-presentation': 0,
     'demo-deck': 0,
   });
+  
+  // Get current index for the active deck
+  const currentIndex = deckPositions[currentDeck] || 0;
+  
+  // Function to update position for current deck
+  const setCurrentIndex = (indexOrUpdater) => {
+    setDeckPositions(prev => {
+      const newIndex = typeof indexOrUpdater === 'function' 
+        ? indexOrUpdater(prev[currentDeck] || 0)
+        : indexOrUpdater;
+      
+      return {
+        ...prev,
+        [currentDeck]: newIndex
+      };
+    });
+  };
 
   // Joke manager (only if jokes config exists)
   const { currentJoke, dismissJoke, preloadedCount } = useJokeManager(jokesConfig || {});
@@ -106,29 +123,16 @@ function App() {
     }
   }, [currentDeck]);
 
-  // Pass currentDeck as a key to force hook reset when deck changes
+  // Use navigation hook with controlled state
   const {
-    currentIndex,
-    totalSlides,
     next,
     prev,
     goTo,
     canGoNext,
     canGoPrev,
-  } = useSlideNavigation(slides.length, currentDeck);
+  } = useSlideNavigation(currentIndex, setCurrentIndex, slides.length);
   
-  // Save current position when navigating
-  useEffect(() => {
-    deckPositions.current[currentDeck] = currentIndex;
-  }, [currentIndex, currentDeck]);
-  
-  // Restore position when deck changes
-  useEffect(() => {
-    const savedPosition = deckPositions.current[currentDeck] || 0;
-    if (slides.length > 0 && currentIndex !== savedPosition) {
-      goTo(savedPosition);
-    }
-  }, [currentDeck, slides.length, goTo, currentIndex]);
+  const totalSlides = slides.length;
 
   const handleNext = () => {
     if (canGoNext) {
@@ -285,8 +289,6 @@ function App() {
           decks={availableDecks}
           currentDeck={currentDeck}
           onSelectDeck={(deckId) => {
-            // Save current position before switching
-            deckPositions.current[currentDeck] = currentIndex;
             setCurrentDeck(deckId);
           }}
         />
