@@ -47,6 +47,13 @@ function App() {
   const [transitionKind, setTransitionKind] = useState('fade');
   const [transitionKey, setTransitionKey] = useState(0);
   const containerRef = useRef(null);
+  
+  // Track slide position for each deck
+  const deckPositions = useRef({
+    'quick-demo': 0,
+    'my-presentation': 0,
+    'demo-deck': 0,
+  });
 
   // Joke manager (only if jokes config exists)
   const { currentJoke, dismissJoke, preloadedCount } = useJokeManager(jokesConfig || {});
@@ -99,14 +106,29 @@ function App() {
     }
   }, [currentDeck]);
 
+  // Pass currentDeck as a key to force hook reset when deck changes
   const {
     currentIndex,
     totalSlides,
     next,
     prev,
+    goTo,
     canGoNext,
     canGoPrev,
-  } = useSlideNavigation(slides.length);
+  } = useSlideNavigation(slides.length, currentDeck);
+  
+  // Save current position when navigating
+  useEffect(() => {
+    deckPositions.current[currentDeck] = currentIndex;
+  }, [currentIndex, currentDeck]);
+  
+  // Restore position when deck changes
+  useEffect(() => {
+    const savedPosition = deckPositions.current[currentDeck] || 0;
+    if (slides.length > 0 && currentIndex !== savedPosition) {
+      goTo(savedPosition);
+    }
+  }, [currentDeck, slides.length, goTo, currentIndex]);
 
   const handleNext = () => {
     if (canGoNext) {
@@ -263,6 +285,8 @@ function App() {
           decks={availableDecks}
           currentDeck={currentDeck}
           onSelectDeck={(deckId) => {
+            // Save current position before switching
+            deckPositions.current[currentDeck] = currentIndex;
             setCurrentDeck(deckId);
           }}
         />
