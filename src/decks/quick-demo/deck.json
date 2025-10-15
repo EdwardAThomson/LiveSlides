@@ -1,0 +1,48 @@
+{
+  "title": "Quick Demo",
+  "theme": "dark",
+  "transition": "fade",
+  "slides": [
+    {
+      "id": "intro",
+      "type": "text",
+      "html": {
+        "title": "Welcome to <em>LiveSlides</em>",
+        "body": "<p>Dynamic presentations with React, animations, and embedded apps.</p><p class=\"mt-4\">Use <kbd class=\"px-2 py-1 bg-white/20 rounded\">←</kbd> <kbd class=\"px-2 py-1 bg-white/20 rounded\">→</kbd> or <kbd class=\"px-2 py-1 bg-white/20 rounded\">Space</kbd> to navigate. Press <kbd class=\"px-2 py-1 bg-white/20 rounded\">F</kbd> for fullscreen.</p>"
+      }
+    },
+    {
+      "id": "features",
+      "type": "text",
+      "html": {
+        "title": "✨ Features",
+        "body": "<ul class=\"text-left max-w-2xl mx-auto space-y-3\"><li>🎬 Smooth transitions (fade & slide)</li><li>🖼️ Images, YouTube, and iframes</li><li>⌨️ Keyboard navigation</li><li>🎯 Click-to-advance</li><li>📱 Responsive design</li></ul>"
+      }
+    },
+    {
+      "id": "image-demo",
+      "type": "image",
+      "src": "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=1600&q=80",
+      "alt": "Team collaboration"
+    },
+    {
+      "id": "youtube-demo",
+      "type": "youtube",
+      "youtubeId": "dQw4w9WgXcQ",
+      "start": 0
+    },
+    {
+      "id": "iframe-demo",
+      "type": "iframe",
+      "src": "https://roguelike-seven.vercel.app"
+    },
+    {
+      "id": "outro",
+      "type": "text",
+      "html": {
+        "title": "Ready to build amazing presentations? 🚀",
+        "body": "<p>Press <kbd class=\"px-2 py-1 bg-white/20 rounded\">S</kbd> to toggle transitions</p>"
+      }
+    }
+  ]
+}

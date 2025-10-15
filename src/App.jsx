@@ -14,55 +14,12 @@ import useJokeManager from './hooks/useJokeManager';
 import { processDeck } from './lib/deckLoader';
 import myPresentation from './decks/my-presentation';
 import demoDeck from './decks/demo-deck';
+import quickDemo from './decks/quick-demo';
 
-// Demo deck data
-const demoSlides = [
-  {
-    id: 'intro',
-    type: 'text',
-    html: {
-      title: 'Welcome to <em>LiveSlides</em>',
-      body: '<p>Dynamic presentations with React, animations, and embedded apps.</p><p class="mt-4">Use <kbd class="px-2 py-1 bg-white/20 rounded">←</kbd> <kbd class="px-2 py-1 bg-white/20 rounded">→</kbd> or <kbd class="px-2 py-1 bg-white/20 rounded">Space</kbd> to navigate. Press <kbd class="px-2 py-1 bg-white/20 rounded">F</kbd> for fullscreen.</p>',
-    },
-  },
-  {
-    id: 'features',
-    type: 'text',
-    html: {
-      title: '✨ Features',
-      body: '<ul class="text-left max-w-2xl mx-auto space-y-3"><li>🎬 Smooth transitions (fade & slide)</li><li>🖼️ Images, YouTube, and iframes</li><li>⌨️ Keyboard navigation</li><li>🎯 Click-to-advance</li><li>📱 Responsive design</li></ul>',
-    },
-  },
-  {
-    id: 'image-demo',
-    type: 'image',
-    src: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=1600&q=80',
-    alt: 'Team collaboration',
-  },
-  {
-    id: 'youtube-demo',
-    type: 'youtube',
-    youtubeId: 'dQw4w9WgXcQ',
-    start: 0,
-  },
-  {
-    id: 'iframe-demo',
-    type: 'iframe',
-    src: 'https://example.com',
-  },
-  {
-    id: 'outro',
-    type: 'text',
-    html: {
-      title: 'Ready to build amazing presentations? 🚀',
-      body: '<p>Press <kbd class="px-2 py-1 bg-white/20 rounded">S</kbd> to toggle transitions</p>',
-    },
-  },
-];
 
 function App() {
-  const [currentDeck, setCurrentDeck] = useState('hardcoded'); // Start with hardcoded to ensure something renders
-  const [slides, setSlides] = useState(demoSlides); // Initialize with hardcoded slides
+  const [currentDeck, setCurrentDeck] = useState('quick-demo'); // Start with quick-demo
+  const [slides, setSlides] = useState([]); // Initialize empty, will load from deck
   const [jokesConfig, setJokesConfig] = useState(null);
   const [transitionKind, setTransitionKind] = useState('fade');
   const [transitionKey, setTransitionKey] = useState(0);
@@ -76,6 +33,7 @@ function App() {
     console.log('Loading deck:', currentDeck);
     console.log('myPresentation:', myPresentation);
     console.log('demoDeck:', demoDeck);
+    console.log('quickDemo:', quickDemo);
     
     try {
       let loadedSlides;
@@ -94,14 +52,14 @@ function App() {
           setJokesConfig(demoDeck.jokes);
           console.log('Loaded jokes:', demoDeck.jokes);
           break;
-        case 'hardcoded':
-          console.log('Using hardcoded slides');
-          loadedSlides = demoSlides;
-          setJokesConfig(null); // No jokes for hardcoded deck
+        case 'quick-demo':
+          console.log('Processing quick-demo');
+          loadedSlides = processDeck(quickDemo.config, quickDemo.mdxModules);
+          setJokesConfig(null); // No jokes for quick-demo
           break;
         default:
-          loadedSlides = processDeck(myPresentation.config, myPresentation.mdxModules);
-          setJokesConfig(myPresentation.jokes);
+          loadedSlides = processDeck(quickDemo.config, quickDemo.mdxModules);
+          setJokesConfig(null);
       }
       
       console.log('Setting slides:', loadedSlides);
@@ -109,9 +67,12 @@ function App() {
     } catch (error) {
       console.error('Failed to load deck:', error);
       console.error('Error stack:', error.stack);
-      // Fall back to hardcoded slides
-      setSlides(demoSlides);
-      setCurrentDeck('hardcoded');
+      // Show error state
+      setSlides([{
+        id: 'error',
+        type: 'error',
+        error: `Failed to load deck: ${error.message}`
+      }]);
     }
   }, [currentDeck]);
 
@@ -123,20 +84,6 @@ function App() {
     canGoNext,
     canGoPrev,
   } = useSlideNavigation(slides.length);
-
-  const currentSlide = slides[currentIndex];
-
-  // Show loading state if no slides yet
-  if (!slides || slides.length === 0) {
-    return (
-      <div className="w-screen h-screen bg-black text-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-4xl mb-4">⏳</div>
-          <div className="text-xl">Loading presentation...</div>
-        </div>
-      </div>
-    );
-  }
 
   const handleNext = () => {
     if (canGoNext) {
@@ -187,6 +134,20 @@ function App() {
     onToggleFullscreen: toggleFullscreen,
     onToggleTransition: toggleTransition,
   });
+
+  const currentSlide = slides[currentIndex];
+
+  // Show loading state if no slides yet
+  if (!slides || slides.length === 0) {
+    return (
+      <div className="w-screen h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-4xl mb-4">⏳</div>
+          <div className="text-xl">Loading presentation...</div>
+        </div>
+      </div>
+    );
+  }
 
   const renderSlide = (slide) => {
     switch (slide.type) {
@@ -285,10 +246,10 @@ function App() {
           <button
             onClick={(e) => {
               e.stopPropagation();
-              setCurrentDeck('hardcoded');
+              setCurrentDeck('quick-demo');
             }}
             className={`px-3 py-1.5 rounded-lg backdrop-blur-sm transition-colors ${
-              currentDeck === 'hardcoded' 
+              currentDeck === 'quick-demo' 
                 ? 'bg-green-500/40 border border-green-400' 
                 : 'bg-white/10 hover:bg-white/20'
             }`}

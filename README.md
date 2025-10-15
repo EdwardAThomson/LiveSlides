@@ -1,6 +1,6 @@
 # LiveSlides
 
-A lightweight, presenter-friendly slide app for YouTube and live demos. Author slides in Markdown/MDX, embed live web apps, images, and videos, trigger quick "joke" overlays with hotkeys, and ship as a web app or desktop app (Tauri) with fullscreen/kiosk support.
+A lightweight, presenter-friendly slide app for YouTube and live demos. Author slides in Markdown/MDX, embed live web apps, images, and videos, trigger quick "joke" overlays with hotkeys, and ship as a web app or desktop app with fullscreen/kiosk support.
 
 ##  Quick Start
 
