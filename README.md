@@ -1,6 +1,8 @@
 # LiveSlides
 
-A lightweight, presenter-friendly slide app for YouTube and live demos. Author slides in Markdown/MDX, embed live web apps, images, and videos, trigger quick "joke" overlays with hotkeys, and ship as a web app or desktop app with fullscreen/kiosk support.
+**Code-first presentations powered by React and AI.**
+
+Create stunning, interactive presentations using Markdown/MDX and React components. Because your slides are pure code, you can leverage AI assistants to generate, customize, and refine your content instantly. Embed live web apps, videos, and rich media with beautiful gradient borders. Perfect for technical talks, live demos, and YouTube presentations.
 
 ##  Quick Start
 
@@ -33,58 +35,99 @@ Press **S** to cycle through **10 smooth transition styles**:
 
 All transitions use Framer Motion for buttery-smooth 60fps animations!
 
+## ✨ Key Features
+
+- **🤖 AI-Powered Workflow** - Generate and customize slides using AI assistants like Claude or ChatGPT
+- **📝 MDX Authoring** - Write slides in Markdown with React components
+- **🎨 Beautiful Borders** - Gradient borders with hover effects on all media
+- **🎬 10 Smooth Transitions** - Fade, slide, zoom, flip, and more (60fps via Framer Motion)
+- **🖼️ Rich Media** - Images, YouTube videos, and live embedded web apps
+- **📊 Deck Selector** - Switch between multiple presentations with independent slide positions
+- **⌨️ Keyboard First** - Full keyboard navigation and shortcuts
+- **📱 Touch Support** - Swipe gestures for mobile/tablet
+- **🎭 Joke Overlays** - Trigger GIFs and reactions with hotkeys during presentations
+
 ##  Keyboard Shortcuts
 
 - **←/→ or Space** - Navigate slides
 - **F** - Toggle fullscreen
-- **S** - Cycle through 10 transitions (fade → slide → scale → ... → slideDown)
-- **1, 2, 3, Q** - Trigger joke overlays (when available)
+- **S** - Cycle through transitions
+- **1, 2, 3, Q** - Trigger joke overlays (when configured)
 - **Escape** - Exit fullscreen
 - **Click** - Advance to next slide
 - **Swipe** - Navigate on touch devices
+
+## 🤖 AI-Powered Workflow
+
+Since LiveSlides presentations are pure code (MDX + React), you can use AI to:
+
+- **Generate entire presentations** - "Create a 5-slide deck about React hooks"
+- **Customize layouts** - "Make this slide split 60/40 with an image on the right"
+- **Add components** - "Add a callout box highlighting this key point"
+- **Refine content** - "Make this more concise" or "Add code examples"
+- **Create themes** - "Update the colors to match my brand"
+
+Just describe what you want, and your AI assistant can generate or modify the MDX files instantly!
 
 ##  Project Structure
 
 ```
 src/
 ├── components/
-│   ├── SlideChrome.jsx      # Main container with controls
+│   ├── DeckSelector.jsx      # Dropdown menu for presentations
+│   ├── MediaFrame.jsx        # Gradient border wrapper
+│   ├── SlideChrome.jsx       # Main container with controls
 │   ├── Transition.jsx        # Transition animations
-│   └── slides/               # Slide type components
-│       ├── TextSlide.jsx
-│       ├── ImageSlide.jsx
-│       ├── YouTubeSlide.jsx
-│       └── IframeSlide.jsx
+│   ├── JokeOverlay.jsx       # Hotkey-triggered overlays
+│   ├── slides/               # Slide type components
+│   │   ├── TextSlide.jsx
+│   │   ├── ImageSlide.jsx
+│   │   ├── YouTubeSlide.jsx
+│   │   ├── IframeSlide.jsx
+│   │   └── MDXSlide.jsx
+│   └── mdx-primitives/       # Reusable MDX components
+│       ├── Grid.jsx
+│       ├── Block.jsx
+│       ├── Callout.jsx
+│       └── Media.jsx
+├── decks/                    # Your presentations
+│   ├── quick-demo/           # Built-in demo
+│   ├── demo-deck/            # MDX examples
+│   └── my-presentation/      # Your custom deck
 ├── hooks/
 │   ├── useSlideNavigation.js # Navigation logic
-│   └── useKeyboardNav.js     # Keyboard handling
+│   ├── useKeyboardNav.js     # Keyboard handling
+│   └── useJokeManager.js     # Joke overlay system
 └── App.jsx                   # Main app component
 ```
-##  Current Status: Phase 3 Complete ✨
+##  Current Status: Phase 3+ Complete ✨
 
 **Phase 1 - Core Engine:**
--  All 4 slide types (Text, Image, YouTube, Iframe)
+-  All slide types (Text, Image, YouTube, Iframe, MDX)
 -  Keyboard navigation & click-to-advance
 -  Fullscreen support
+-  Touch/swipe gestures
 
 **Phase 2 - MDX & Deck Loading:**
 -  Deck loader (deck.json + MDX files)
 -  MDX primitives (Grid, Block, Media, Iframe, YouTube, Callout)
--  Layout system (center, split-40-60, split-60-40, three-up, full)
+-  Layout system (center, split layouts, three-up, full)
 -  Frontmatter support for slide notes
--  Multiple deck switching
+-  Multiple deck management
 
 **Phase 3 - Polish & Interactivity:**
--  Joke overlays with hotkeys (1, 2, 3, Q)
--  Framer Motion animations (4 transition types)
+-  10 smooth transitions with Framer Motion
+-  Joke overlays with hotkeys
 -  Stagger animations for MDX content
--  Touch/swipe gesture support
--  Smooth exit animations
+-  Gradient borders on all media
+-  Dropdown deck selector
+-  Per-deck slide position memory
 
-**Next Phase (Sprint 4):**
+**Next Phase:**
 -  Presenter view with notes & timer
--  Tauri desktop build
+-  Export to PDF/static site
 -  Advanced slide types (Terminal, Code highlighting, Charts)
+-  Tauri desktop build
 
 ##  Documentation
 
