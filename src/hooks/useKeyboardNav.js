@@ -5,11 +5,12 @@ export default function useKeyboardNav({
   onPrev, 
   onToggleFullscreen,
   onToggleTransition,
+  onToggleCameraOverlay,
 }) {
   useEffect(() => {
     const handleKeyDown = (e) => {
       // Prevent default for navigation keys
-      if (['ArrowLeft', 'ArrowRight', ' ', 'f', 'F', 's', 'S'].includes(e.key)) {
+      if (['ArrowLeft', 'ArrowRight', ' ', 'f', 'F', 's', 'S', 'c', 'C'].includes(e.key)) {
         e.preventDefault();
       }
 
@@ -29,6 +30,10 @@ export default function useKeyboardNav({
         case 'S':
           onToggleTransition?.();
           break;
+        case 'c':
+        case 'C':
+          onToggleCameraOverlay?.();
+          break;
         case 'Escape':
           // Let browser handle escape (exits fullscreen)
           break;
@@ -39,5 +44,5 @@ export default function useKeyboardNav({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onNext, onPrev, onToggleFullscreen, onToggleTransition]);
+  }, [onNext, onPrev, onToggleFullscreen, onToggleTransition, onToggleCameraOverlay]);
 }

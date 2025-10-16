@@ -53,6 +53,7 @@ All transitions use Framer Motion for buttery-smooth 60fps animations!
 - **←/→ or Space** - Navigate slides
 - **F** - Toggle fullscreen
 - **S** - Cycle through transitions
+- **C** - Toggle camera overlay (when configured)
 - **1, 2, 3, Q** - Trigger joke overlays (when configured)
 - **Escape** - Exit fullscreen
 - **Click** - Advance to next slide

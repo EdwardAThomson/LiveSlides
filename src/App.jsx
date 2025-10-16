@@ -45,6 +45,7 @@ function App() {
   const [slides, setSlides] = useState([]); // Initialize empty, will load from deck
   const [jokesConfig, setJokesConfig] = useState(null);
   const [cameraOverlay, setCameraOverlay] = useState(null);
+  const [cameraOverlayVisible, setCameraOverlayVisible] = useState(true);
   const [transitionKind, setTransitionKind] = useState('fade');
   const [transitionKey, setTransitionKey] = useState(0);
   const containerRef = useRef(null);
@@ -182,11 +183,16 @@ function App() {
     });
   };
 
+  const toggleCameraOverlay = () => {
+    setCameraOverlayVisible(prev => !prev);
+  };
+
   useKeyboardNav({
     onNext: handleNext,
     onPrev: handlePrev,
     onToggleFullscreen: toggleFullscreen,
     onToggleTransition: toggleTransition,
+    onToggleCameraOverlay: toggleCameraOverlay,
   });
 
   const currentSlide = slides[currentIndex];
@@ -276,9 +282,14 @@ function App() {
           e?.stopPropagation();
           toggleFullscreen();
         }}
+        onToggleCameraOverlay={(e) => {
+          e?.stopPropagation();
+          toggleCameraOverlay();
+        }}
         canGoPrev={canGoPrev}
         canGoNext={canGoNext}
         cameraOverlay={cameraOverlay}
+        cameraOverlayVisible={cameraOverlayVisible}
       >
         {/* AnimatePresence enables exit animations */}
         <AnimatePresence mode="wait">

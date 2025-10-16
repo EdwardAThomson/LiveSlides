@@ -153,9 +153,18 @@ Add a `cameraOverlay` object to your `deck.json` file:
 - It has `pointer-events: none` so it doesn't block clicks
 - The overlay is purely visual and doesn't affect slide layout or content positioning
 
+## Toggling Visibility During Presentation
+
+You can show or hide the camera overlay during your presentation without changing the configuration:
+
+- **Keyboard:** Press **C** to toggle the camera overlay on/off
+- **Button:** Click the camera icon (📹) in the bottom control bar
+
+This is useful when you want to temporarily show the full slide content without the camera overlay blocking any area.
+
 ## Disabling the Overlay
 
-To disable the camera overlay for a specific deck:
+To permanently disable the camera overlay for a specific deck:
 
 ```json
 {

@@ -11,9 +11,9 @@
  * - Rounded corners to match typical camera feeds
  */
 
-export default function CameraOverlay({ config }) {
-  // Return null if no camera overlay configured
-  if (!config || !config.enabled) {
+export default function CameraOverlay({ config, visible = true }) {
+  // Return null if no camera overlay configured or if hidden
+  if (!config || !config.enabled || !visible) {
     return null;
   }
 

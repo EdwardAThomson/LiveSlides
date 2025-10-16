@@ -7,9 +7,11 @@ export default function SlideChrome({
   currentIndex, 
   totalSlides,
   onToggleFullscreen,
+  onToggleCameraOverlay,
   canGoPrev,
   canGoNext,
   cameraOverlay,
+  cameraOverlayVisible,
 }) {
   return (
     <div className="w-full h-screen bg-black text-white overflow-hidden relative">
@@ -51,10 +53,24 @@ export default function SlideChrome({
         >
           ⛶
         </button>
+        
+        {/* Camera overlay toggle - only show if camera overlay is configured */}
+        {cameraOverlay && cameraOverlay.enabled && (
+          <>
+            <div className="mx-1 w-px bg-white/20 h-6" />
+            <button 
+              onClick={onToggleCameraOverlay}
+              title="Toggle Camera Overlay (C)"
+              className="px-3 py-1.5 rounded hover:bg-white/10 transition-all"
+            >
+              {cameraOverlayVisible ? '📹' : '📹̶'}
+            </button>
+          </>
+        )}
       </div>
 
       {/* Camera overlay mask */}
-      <CameraOverlay config={cameraOverlay} />
+      <CameraOverlay config={cameraOverlay} visible={cameraOverlayVisible} />
     </div>
   );
 }
