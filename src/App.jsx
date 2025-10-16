@@ -44,6 +44,7 @@ function App() {
   const [currentDeck, setCurrentDeck] = useState('quick-demo'); // Start with quick-demo
   const [slides, setSlides] = useState([]); // Initialize empty, will load from deck
   const [jokesConfig, setJokesConfig] = useState(null);
+  const [cameraOverlay, setCameraOverlay] = useState(null);
   const [transitionKind, setTransitionKind] = useState('fade');
   const [transitionKey, setTransitionKey] = useState(0);
   const containerRef = useRef(null);
@@ -90,6 +91,7 @@ function App() {
           console.log('Processing my-presentation');
           loadedSlides = processDeck(myPresentation.config, myPresentation.mdxModules);
           setJokesConfig(myPresentation.jokes);
+          setCameraOverlay(myPresentation.config.cameraOverlay);
           console.log('Loaded slides:', loadedSlides);
           console.log('Loaded jokes:', myPresentation.jokes);
           break;
@@ -97,16 +99,19 @@ function App() {
           console.log('Processing demo-deck');
           loadedSlides = processDeck(demoDeck.config, demoDeck.mdxModules);
           setJokesConfig(demoDeck.jokes);
+          setCameraOverlay(demoDeck.config.cameraOverlay);
           console.log('Loaded jokes:', demoDeck.jokes);
           break;
         case 'quick-demo':
           console.log('Processing quick-demo');
           loadedSlides = processDeck(quickDemo.config, quickDemo.mdxModules);
           setJokesConfig(null); // No jokes for quick-demo
+          setCameraOverlay(quickDemo.config.cameraOverlay);
           break;
         default:
           loadedSlides = processDeck(quickDemo.config, quickDemo.mdxModules);
           setJokesConfig(null);
+          setCameraOverlay(null);
       }
       
       console.log('Setting slides:', loadedSlides);
@@ -273,6 +278,7 @@ function App() {
         }}
         canGoPrev={canGoPrev}
         canGoNext={canGoNext}
+        cameraOverlay={cameraOverlay}
       >
         {/* AnimatePresence enables exit animations */}
         <AnimatePresence mode="wait">

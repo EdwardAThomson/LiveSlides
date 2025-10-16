@@ -43,6 +43,7 @@ All transitions use Framer Motion for buttery-smooth 60fps animations!
 - **🎬 10 Smooth Transitions** - Fade, slide, zoom, flip, and more (60fps via Framer Motion)
 - **🖼️ Rich Media** - Images, YouTube videos, and live embedded web apps
 - **📊 Deck Selector** - Switch between multiple presentations with independent slide positions
+- **📹 Camera Overlay** - Block out regions for your camera feed during recording/streaming
 - **⌨️ Keyboard First** - Full keyboard navigation and shortcuts
 - **📱 Touch Support** - Swipe gestures for mobile/tablet
 - **🎭 Joke Overlays** - Trigger GIFs and reactions with hotkeys during presentations
@@ -122,6 +123,7 @@ src/
 -  Gradient borders on all media
 -  Dropdown deck selector
 -  Per-deck slide position memory
+-  Camera overlay for presenter feeds
 
 **Next Phase:**
 -  Presenter view with notes & timer
@@ -133,6 +135,7 @@ src/
 
 - **Product Plan:** `live_slides_product_tech_plan.md`
 - **Implementation Plan:** `IMPLEMENTATION.md`
+- **Camera Overlay Guide:** `CAMERA_OVERLAY.md`
 
 ##  Tech Stack
 

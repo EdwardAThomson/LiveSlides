@@ -1,3 +1,5 @@
+import CameraOverlay from './CameraOverlay';
+
 export default function SlideChrome({ 
   children, 
   onPrev, 
@@ -7,6 +9,7 @@ export default function SlideChrome({
   onToggleFullscreen,
   canGoPrev,
   canGoNext,
+  cameraOverlay,
 }) {
   return (
     <div className="w-full h-screen bg-black text-white overflow-hidden relative">
@@ -49,6 +52,9 @@ export default function SlideChrome({
           ⛶
         </button>
       </div>
+
+      {/* Camera overlay mask */}
+      <CameraOverlay config={cameraOverlay} />
     </div>
   );
 }
