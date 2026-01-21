@@ -131,6 +131,13 @@ src/
 - ✅ Camera overlay for presenter feeds
 - ✅ **Presenter View** with notes, timer, controls & joke palette
 
+**Phase 4 - Desktop Wrapper (Tauri):**
+- ✅ Tauri v2 integration with Rust backend
+- ✅ Native multi-window support (Presenter + Stage views)
+- ✅ Cross-window communication via Tauri events
+- ✅ Works in both web and desktop modes
+- ✅ Camera overlay toggle in Stage view
+
 **Next Phase:**
 - ⬜ Export to PDF/static site
 - ⬜ Advanced slide types (Terminal, Code highlighting, Charts)
