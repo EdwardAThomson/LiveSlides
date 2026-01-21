@@ -46,6 +46,7 @@ All transitions use Framer Motion for buttery-smooth 60fps animations!
 - **🖼️ Rich Media** - Images, YouTube videos, and live embedded web apps
 - **📊 Deck Selector** - Switch between multiple presentations with independent slide positions
 - **📹 Camera Overlay** - Block out regions for your camera feed during recording/streaming
+- **📺 Presenter View** - Separate window with notes, timer, and controls for presenting
 - **⌨️ Keyboard First** - Full keyboard navigation and shortcuts
 - **📱 Touch Support** - Swipe gestures for mobile/tablet
 - **🎭 Joke Overlays** - Trigger GIFs and reactions with hotkeys during presentations
@@ -55,6 +56,7 @@ All transitions use Framer Motion for buttery-smooth 60fps animations!
 - **←/→ or Space** - Navigate slides
 - **F** - Toggle fullscreen
 - **S** - Cycle through transitions
+- **P** - Open/close Presenter View
 - **C** - Toggle camera overlay (when configured)
 - **1, 2, 3, Q** - Trigger joke overlays (when configured)
 - **Escape** - Exit fullscreen
@@ -104,7 +106,7 @@ src/
 │   └── useJokeManager.js     # Joke overlay system
 └── App.jsx                   # Main app component
 ```
-##  Current Status: Phase 3+ Complete ✨
+##  Current Status: Phase 3 Complete ✨
 
 **Phase 1 - Core Engine:**
 -  All slide types (Text, Image, YouTube, Iframe, MDX)
@@ -127,9 +129,9 @@ src/
 -  Dropdown deck selector
 -  Per-deck slide position memory
 -  Camera overlay for presenter feeds
+-  **Presenter View** with notes, timer, controls & joke palette
 
 **Next Phase:**
--  Presenter view with notes & timer
 -  Export to PDF/static site
 -  Advanced slide types (Terminal, Code highlighting, Charts)
 -  Tauri desktop build

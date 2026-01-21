@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import SlideChrome from './components/SlideChrome';
 import Transition from './components/Transition';
@@ -12,10 +12,13 @@ import DeckSelector from './components/DeckSelector';
 import useSlideNavigation from './hooks/useSlideNavigation';
 import useKeyboardNav from './hooks/useKeyboardNav';
 import useJokeManager from './hooks/useJokeManager';
+import usePresenterWindow from './hooks/usePresenterWindow';
 import { processDeck } from './lib/deckLoader';
 import myPresentation from './decks/my-presentation';
 import demoDeck from './decks/demo-deck';
 import quickDemo from './decks/quick-demo';
+import vibeCoding from './decks/vibe-coding';
+import aiFrameworks from './decks/ai-frameworks';
 
 
 // Available decks configuration
@@ -25,6 +28,12 @@ const availableDecks = [
     name: 'Quick Demo',
     icon: '⚡',
     description: 'Fast overview of features',
+  },
+  {
+    id: 'vibe-coding',
+    name: 'Vibe Coding Process',
+    icon: '🤖',
+    description: 'AI-assisted development workflow',
   },
   {
     id: 'my-presentation',
@@ -37,6 +46,12 @@ const availableDecks = [
     name: 'MDX Examples',
     icon: '🎨',
     description: 'MDX components showcase',
+  },
+  {
+    id: 'ai-frameworks',
+    name: 'AI Frameworks',
+    icon: '🤖',
+    description: 'AI Opportunity & Risk Management',
   },
 ];
 
@@ -53,8 +68,10 @@ function App() {
   // Track slide position for each deck - this is our source of truth
   const [deckPositions, setDeckPositions] = useState({
     'quick-demo': 0,
+    'vibe-coding': 0,
     'my-presentation': 0,
     'demo-deck': 0,
+    'ai-frameworks': 0,
   });
   
   // Get current index for the active deck
@@ -75,7 +92,39 @@ function App() {
   };
 
   // Joke manager (only if jokes config exists)
-  const { currentJoke, dismissJoke, preloadedCount } = useJokeManager(jokesConfig || {});
+  const { currentJoke, dismissJoke, preloadedCount, triggerJokeByHotkey } = useJokeManager(jokesConfig || {});
+
+  // Presenter window manager
+  const { 
+    isPresenterOpen, 
+    togglePresenterWindow 
+  } = usePresenterWindow({
+    currentIndex,
+    totalSlides: slides.length,
+    currentSlide: slides[currentIndex],
+    slides,
+    jokesConfig,
+    deckId: currentDeck,
+    onNext: () => {
+      if (currentIndex < slides.length - 1) {
+        setCurrentIndex(prev => prev + 1);
+        setTransitionKey(k => k + 1);
+      }
+    },
+    onPrev: () => {
+      if (currentIndex > 0) {
+        setCurrentIndex(prev => prev - 1);
+        setTransitionKey(k => k + 1);
+      }
+    },
+    onGoTo: (index) => {
+      if (index >= 0 && index < slides.length) {
+        setCurrentIndex(index);
+        setTransitionKey(k => k + 1);
+      }
+    },
+    onTriggerJoke: triggerJokeByHotkey,
+  });
 
   // Load the selected deck
   useEffect(() => {
@@ -96,6 +145,12 @@ function App() {
           console.log('Loaded slides:', loadedSlides);
           console.log('Loaded jokes:', myPresentation.jokes);
           break;
+        case 'vibe-coding':
+          console.log('Processing vibe-coding');
+          loadedSlides = processDeck(vibeCoding.config, vibeCoding.mdxModules);
+          setJokesConfig(null);
+          setCameraOverlay(vibeCoding.config.cameraOverlay);
+          break;
         case 'demo-deck':
           console.log('Processing demo-deck');
           loadedSlides = processDeck(demoDeck.config, demoDeck.mdxModules);
@@ -108,6 +163,12 @@ function App() {
           loadedSlides = processDeck(quickDemo.config, quickDemo.mdxModules);
           setJokesConfig(null); // No jokes for quick-demo
           setCameraOverlay(quickDemo.config.cameraOverlay);
+          break;
+        case 'ai-frameworks':
+          console.log('Processing ai-frameworks');
+          loadedSlides = processDeck(aiFrameworks.config, aiFrameworks.mdxModules);
+          setJokesConfig(null);
+          setCameraOverlay(aiFrameworks.config.cameraOverlay);
           break;
         default:
           loadedSlides = processDeck(quickDemo.config, quickDemo.mdxModules);
@@ -193,6 +254,7 @@ function App() {
     onToggleFullscreen: toggleFullscreen,
     onToggleTransition: toggleTransition,
     onToggleCameraOverlay: toggleCameraOverlay,
+    onTogglePresenter: togglePresenterWindow,
   });
 
   const currentSlide = slides[currentIndex];
@@ -321,6 +383,18 @@ function App() {
             🎭 Jokes: Press <strong className="text-white">1</strong>, <strong className="text-white">2</strong>, <strong className="text-white">3</strong>, or <strong className="text-white">Q</strong>
           </div>
         )}
+
+        {/* Presenter View indicator */}
+        <button
+          onClick={togglePresenterWindow}
+          className={`px-3 py-1.5 rounded-lg text-xs transition-colors ${
+            isPresenterOpen 
+              ? 'bg-green-500/20 border border-green-400/30 text-green-400' 
+              : 'bg-white/10 backdrop-blur-sm text-white/70 hover:bg-white/20'
+          }`}
+        >
+          {isPresenterOpen ? '📺 Presenter Open' : '📺 Presenter View (P)'}
+        </button>
       </div>
 
       {/* Joke overlay */}

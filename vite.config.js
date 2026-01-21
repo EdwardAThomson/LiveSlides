@@ -4,6 +4,7 @@ import mdx from '@mdx-js/rollup'
 import remarkFrontmatter from 'remark-frontmatter'
 import remarkMdxFrontmatter from 'remark-mdx-frontmatter'
 import remarkGfm from 'remark-gfm'
+import { resolve } from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -17,4 +18,12 @@ export default defineConfig({
     })},
     react(),
   ],
+  build: {
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'index.html'),
+        presenter: resolve(__dirname, 'presenter.html'),
+      },
+    },
+  },
 })

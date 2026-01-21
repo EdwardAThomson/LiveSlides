@@ -61,9 +61,21 @@ export default function useJokeManager(jokesConfig = {}) {
     setCurrentJoke(null);
   }, []);
 
+  // Programmatically trigger a joke by hotkey (for presenter view)
+  const triggerJokeByHotkey = useCallback((hotkey) => {
+    if (!jokesConfig.jokes) return;
+    
+    const joke = jokesConfig.jokes.find((j) => j.hotkey === hotkey);
+    if (joke) {
+      console.log(`Triggering joke from presenter: ${joke.id} (hotkey: ${hotkey})`);
+      setCurrentJoke(joke);
+    }
+  }, [jokesConfig]);
+
   return {
     currentJoke,
     dismissJoke,
+    triggerJokeByHotkey,
     preloadedCount: preloadedAssets.current.size,
   };
 }
