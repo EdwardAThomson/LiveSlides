@@ -12,7 +12,8 @@ import DeckSelector from './components/DeckSelector';
 import useSlideNavigation from './hooks/useSlideNavigation';
 import useKeyboardNav from './hooks/useKeyboardNav';
 import useJokeManager from './hooks/useJokeManager';
-import usePresenterWindow from './hooks/usePresenterWindow';
+import useAudienceWindow from './hooks/useAudienceWindow';
+import PresenterTimer from './components/PresenterTimer';
 import { processDeck } from './lib/deckLoader';
 import myPresentation from './decks/my-presentation';
 import demoDeck from './decks/demo-deck';
@@ -94,11 +95,14 @@ function App() {
   // Joke manager (only if jokes config exists)
   const { currentJoke, dismissJoke, preloadedCount, triggerJokeByHotkey } = useJokeManager(jokesConfig || {});
 
-  // Presenter window manager
+  // Audience/Stage window manager
   const { 
-    isPresenterOpen, 
-    togglePresenterWindow 
-  } = usePresenterWindow({
+    isAudienceOpen, 
+    toggleAudienceWindow,
+    presentationStartTime,
+    sendJokeToAudience,
+    dismissJokeInAudience 
+  } = useAudienceWindow({
     currentIndex,
     totalSlides: slides.length,
     currentSlide: slides[currentIndex],
@@ -125,6 +129,15 @@ function App() {
     },
     onTriggerJoke: triggerJokeByHotkey,
   });
+
+  // Sync jokes to audience window
+  useEffect(() => {
+    if (currentJoke) {
+      sendJokeToAudience(currentJoke);
+    } else {
+      dismissJokeInAudience();
+    }
+  }, [currentJoke, sendJokeToAudience, dismissJokeInAudience]);
 
   // Load the selected deck
   useEffect(() => {
@@ -254,7 +267,7 @@ function App() {
     onToggleFullscreen: toggleFullscreen,
     onToggleTransition: toggleTransition,
     onToggleCameraOverlay: toggleCameraOverlay,
-    onTogglePresenter: togglePresenterWindow,
+    onTogglePresenter: toggleAudienceWindow,
   });
 
   const currentSlide = slides[currentIndex];
@@ -304,97 +317,171 @@ function App() {
     }
   };
 
+  const nextSlide = slides[currentIndex + 1];
+  const currentNotes = currentSlide?.notes || currentSlide?.frontmatter?.notes || '';
+
   return (
-    <div 
-      ref={containerRef} 
-      className="w-screen h-screen" 
-      onClick={handleClick}
-      onTouchStart={(e) => {
-        const touch = e.touches[0];
-        containerRef.current.touchStartX = touch.clientX;
-      }}
-      onTouchEnd={(e) => {
-        const touch = e.changedTouches[0];
-        const startX = containerRef.current.touchStartX;
-        const endX = touch.clientX;
-        const diff = startX - endX;
-        
-        // Swipe left (next) or right (prev)
-        if (Math.abs(diff) > 50) {
-          if (diff > 0 && canGoNext) {
-            handleNext();
-          } else if (diff < 0 && canGoPrev) {
-            handlePrev();
-          }
-        }
-      }}
-    >
-      <SlideChrome
-        currentIndex={currentIndex}
-        totalSlides={totalSlides}
-        onPrev={(e) => {
-          e?.stopPropagation();
-          handlePrev();
-        }}
-        onNext={(e) => {
-          e?.stopPropagation();
-          handleNext();
-        }}
-        onToggleFullscreen={(e) => {
-          e?.stopPropagation();
-          toggleFullscreen();
-        }}
-        onToggleCameraOverlay={(e) => {
-          e?.stopPropagation();
-          toggleCameraOverlay();
-        }}
-        canGoPrev={canGoPrev}
-        canGoNext={canGoNext}
-        cameraOverlay={cameraOverlay}
-        cameraOverlayVisible={cameraOverlayVisible}
-      >
-        {/* AnimatePresence enables exit animations */}
-        <AnimatePresence mode="wait">
-          <Transition key={`${currentSlide.id}-${transitionKey}`} kind={transitionKind} active>
-            {renderSlide(currentSlide)}
-          </Transition>
-        </AnimatePresence>
-      </SlideChrome>
-
-      {/* Top controls */}
-      <div className="absolute top-4 left-4 flex flex-col gap-3 z-50">
-        {/* Deck Selector */}
-        <DeckSelector 
-          decks={availableDecks}
-          currentDeck={currentDeck}
-          onSelectDeck={(deckId) => {
-            setCurrentDeck(deckId);
-          }}
-        />
-        
-        {/* Transition indicator */}
-        <span className="px-3 py-1.5 rounded-lg bg-white/10 backdrop-blur-sm text-xs text-white/70">
-          Transition: <strong className="text-white">{transitionKind}</strong> (press S)
-        </span>
-
-        {/* Joke indicator */}
-        {jokesConfig && preloadedCount > 0 && (
-          <div className="px-3 py-1.5 rounded-lg bg-purple-500/20 border border-purple-400/30 text-xs text-white/70">
-            🎭 Jokes: Press <strong className="text-white">1</strong>, <strong className="text-white">2</strong>, <strong className="text-white">3</strong>, or <strong className="text-white">Q</strong>
+    <div ref={containerRef} className="w-screen h-screen bg-gray-900 text-white flex flex-col overflow-hidden">
+      {/* Top bar - Timer, deck selector, slide counter */}
+      <div className="flex items-center justify-between px-4 py-3 bg-gray-800 border-b border-gray-700">
+        <div className="flex items-center gap-4">
+          <DeckSelector 
+            decks={availableDecks}
+            currentDeck={currentDeck}
+            onSelectDeck={(deckId) => setCurrentDeck(deckId)}
+          />
+          <div className="flex items-center gap-2">
+            <span className="text-green-400">●</span>
+            <span className="text-lg font-semibold">
+              Slide {currentIndex + 1} of {totalSlides}
+            </span>
           </div>
-        )}
+        </div>
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={toggleTransition}
+            className="px-3 py-1 rounded bg-gray-700 hover:bg-gray-600 text-xs transition-colors"
+          >
+            Transition: <strong>{transitionKind}</strong> ↻
+          </button>
+          <PresenterTimer startTime={presentationStartTime} />
+        </div>
+      </div>
 
-        {/* Presenter View indicator */}
-        <button
-          onClick={togglePresenterWindow}
-          className={`px-3 py-1.5 rounded-lg text-xs transition-colors ${
-            isPresenterOpen 
-              ? 'bg-green-500/20 border border-green-400/30 text-green-400' 
-              : 'bg-white/10 backdrop-blur-sm text-white/70 hover:bg-white/20'
-          }`}
-        >
-          {isPresenterOpen ? '📺 Presenter Open' : '📺 Presenter View (P)'}
-        </button>
+      {/* Main content area */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left panel - Current slide + Notes */}
+        <div className="flex-1 flex flex-col p-4 gap-4">
+          {/* Current slide preview */}
+          <div 
+            className="flex-1 bg-black rounded-xl overflow-hidden relative cursor-pointer"
+            onClick={handleClick}
+          >
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-[142%] h-[142%] flex items-center justify-center" style={{ transform: 'scale(0.7)' }}>
+                <div className="w-full h-full">
+                  <SlideChrome
+                    currentIndex={currentIndex}
+                    totalSlides={totalSlides}
+                    onPrev={(e) => { e?.stopPropagation(); handlePrev(); }}
+                    onNext={(e) => { e?.stopPropagation(); handleNext(); }}
+                    onToggleFullscreen={(e) => { e?.stopPropagation(); toggleFullscreen(); }}
+                    onToggleCameraOverlay={(e) => { e?.stopPropagation(); toggleCameraOverlay(); }}
+                    canGoPrev={canGoPrev}
+                    canGoNext={canGoNext}
+                    cameraOverlay={cameraOverlay}
+                    cameraOverlayVisible={cameraOverlayVisible}
+                    hideControls={true}
+                  >
+                    <AnimatePresence mode="wait">
+                      <Transition key={`${currentSlide.id}-${transitionKey}`} kind={transitionKind} active>
+                        {renderSlide(currentSlide)}
+                      </Transition>
+                    </AnimatePresence>
+                  </SlideChrome>
+                </div>
+              </div>
+            </div>
+            <div className="absolute top-3 left-3 px-2 py-1 bg-purple-600 rounded text-xs font-semibold z-10">
+              CURRENT
+            </div>
+          </div>
+
+          {/* Notes section */}
+          <div className="h-40 bg-gray-800 rounded-xl p-4 overflow-y-auto">
+            <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-2">
+              Speaker Notes
+            </h3>
+            {currentNotes ? (
+              <p className="text-lg leading-relaxed whitespace-pre-wrap">{currentNotes}</p>
+            ) : (
+              <p className="text-gray-500 italic">No notes for this slide</p>
+            )}
+          </div>
+        </div>
+
+        {/* Right panel - Next slide + Controls */}
+        <div className="w-80 flex flex-col p-4 gap-4 border-l border-gray-700">
+          {/* Next slide preview */}
+          <div className="h-48 bg-black rounded-xl overflow-hidden relative">
+            {nextSlide ? (
+              <>
+                <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+                  <div className="w-[250%] h-[250%] flex items-center justify-center" style={{ transform: 'scale(0.4)' }}>
+                    {renderSlide(nextSlide)}
+                  </div>
+                </div>
+                <div className="absolute top-2 left-2 px-2 py-1 bg-gray-600 rounded text-xs font-semibold">
+                  NEXT
+                </div>
+              </>
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center text-gray-500">
+                End of presentation
+              </div>
+            )}
+          </div>
+
+          {/* Navigation controls */}
+          <div className="bg-gray-800 rounded-xl p-4">
+            <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">
+              Navigation
+            </h3>
+            <div className="flex gap-2">
+              <button
+                onClick={handlePrev}
+                disabled={!canGoPrev}
+                className="flex-1 py-3 px-4 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-semibold transition-colors"
+              >
+                ← Prev
+              </button>
+              <button
+                onClick={handleNext}
+                disabled={!canGoNext}
+                className="flex-1 py-3 px-4 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-semibold transition-colors"
+              >
+                Next →
+              </button>
+            </div>
+          </div>
+
+          {/* Stage window toggle */}
+          <button
+            onClick={toggleAudienceWindow}
+            className={`py-3 px-4 rounded-xl font-semibold transition-colors ${
+              isAudienceOpen 
+                ? 'bg-green-600 hover:bg-green-500' 
+                : 'bg-blue-600 hover:bg-blue-500'
+            }`}
+          >
+            {isAudienceOpen ? '📺 Stage Window Open' : '📺 Open Stage Window (P)'}
+          </button>
+
+          {/* Joke triggers */}
+          <div className="flex-1 bg-gray-800 rounded-xl p-4 overflow-y-auto">
+            <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3 flex items-center gap-2">
+              <span>🎭</span> Joke Panel
+            </h3>
+            {jokesConfig?.jokes?.length > 0 ? (
+              <div className="space-y-2">
+                {jokesConfig.jokes.map((joke) => (
+                  <button
+                    key={joke.id}
+                    onClick={() => triggerJokeByHotkey(joke.hotkey)}
+                    className="w-full py-2 px-3 bg-gradient-to-r from-purple-700 to-purple-600 hover:from-purple-600 hover:to-purple-500 rounded-lg text-left flex items-center gap-3 transition-all shadow-md hover:shadow-lg"
+                  >
+                    <span className="w-8 h-8 bg-white/20 rounded flex items-center justify-center font-mono font-bold">
+                      {joke.hotkey}
+                    </span>
+                    <span className="text-sm font-medium truncate">{joke.id}</span>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-sm italic">No jokes configured</p>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Joke overlay */}

@@ -22,7 +22,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
-        presenter: resolve(__dirname, 'presenter.html'),
+        audience: resolve(__dirname, 'audience.html'),
       },
     },
   },
