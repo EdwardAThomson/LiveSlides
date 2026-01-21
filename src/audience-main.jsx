@@ -2,6 +2,10 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import JokeOverlay from './components/JokeOverlay';
+import SlideChrome from './components/SlideChrome';
+
+// Check if running in Tauri
+const isTauri = () => typeof window !== 'undefined' && window.__TAURI_INTERNALS__;
 
 // Audience/Stage View - Clean slide display for projector/external display
 function AudienceView() {
@@ -12,6 +16,10 @@ function AudienceView() {
   const [modules, setModules] = React.useState(null);
   const [currentDeckId, setCurrentDeckId] = React.useState(null);
   const [currentJoke, setCurrentJoke] = React.useState(null);
+  const [cameraOverlayVisible, setCameraOverlayVisible] = React.useState(true);
+  const [cameraOverlay, setCameraOverlay] = React.useState(null);
+  const [totalSlides, setTotalSlides] = React.useState(0);
+  const currentDeckIdRef = React.useRef(null);
 
   // Load base modules on mount
   React.useEffect(() => {
@@ -55,6 +63,8 @@ function AudienceView() {
         const deck = deckModule.default;
         const loadedSlides = modules.processDeck(deck.config, deck.mdxModules);
         setSlides(loadedSlides);
+        setTotalSlides(loadedSlides.length);
+        setCameraOverlay(deck.config.cameraOverlay || null);
         setStatus('');
         setLoadError(null);
       } catch (err) {
@@ -66,8 +76,67 @@ function AudienceView() {
     loadDeck();
   }, [modules, currentDeckId]);
 
-  // Listen for messages from presenter (main window)
+  // Keep ref in sync for Tauri event handlers
   React.useEffect(() => {
+    currentDeckIdRef.current = currentDeckId;
+  }, [currentDeckId]);
+
+  // Listen for messages from presenter (main window) - Tauri mode
+  React.useEffect(() => {
+    if (!isTauri()) return;
+
+    let unlistenSlideState = null;
+    let unlistenShowJoke = null;
+    let unlistenDismissJoke = null;
+
+    async function setupTauriListeners() {
+      try {
+        const { listen, emit } = await import('@tauri-apps/api/event');
+
+        // Listen for slide state updates
+        unlistenSlideState = await listen('slide-state', (event) => {
+          const data = event.payload;
+          console.log('[Tauri Audience] Received slide-state:', data);
+          setCurrentIndex(data.currentIndex);
+          
+          if (data.deckId && data.deckId !== currentDeckIdRef.current) {
+            setCurrentDeckId(data.deckId);
+          }
+        });
+
+        // Listen for joke events
+        unlistenShowJoke = await listen('show-joke', (event) => {
+          console.log('[Tauri Audience] Received show-joke');
+          setCurrentJoke(event.payload.joke);
+        });
+
+        unlistenDismissJoke = await listen('dismiss-joke', () => {
+          console.log('[Tauri Audience] Received dismiss-joke');
+          setCurrentJoke(null);
+        });
+
+        // Tell presenter we're ready
+        console.log('[Tauri Audience] Emitting audience-ready');
+        await emit('audience-ready', {});
+
+      } catch (e) {
+        console.error('[Tauri Audience] Error setting up listeners:', e);
+      }
+    }
+
+    setupTauriListeners();
+
+    return () => {
+      unlistenSlideState?.();
+      unlistenShowJoke?.();
+      unlistenDismissJoke?.();
+    };
+  }, []);
+
+  // Listen for messages from presenter (main window) - Web mode
+  React.useEffect(() => {
+    if (isTauri()) return;
+
     const handleMessage = (event) => {
       if (event.data?.type === 'SLIDE_STATE') {
         setCurrentIndex(event.data.currentIndex);
@@ -139,12 +208,32 @@ function AudienceView() {
     );
   }
 
-  // Clean slide view - no chrome, just the slide
+  // Toggle fullscreen
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen?.();
+    } else {
+      document.exitFullscreen?.();
+    }
+  };
+
+  // Stage view with controls
   return (
-    <div className="w-screen h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 text-white flex items-center justify-center overflow-hidden">
+    <SlideChrome
+      currentIndex={currentIndex}
+      totalSlides={totalSlides || slides.length}
+      onPrev={() => {}} // Navigation controlled by presenter
+      onNext={() => {}}
+      onToggleFullscreen={toggleFullscreen}
+      onToggleCameraOverlay={() => setCameraOverlayVisible(!cameraOverlayVisible)}
+      canGoPrev={currentIndex > 0}
+      canGoNext={currentIndex < slides.length - 1}
+      cameraOverlay={cameraOverlay}
+      cameraOverlayVisible={cameraOverlayVisible}
+    >
       {currentSlide && renderSlide(currentSlide)}
       <JokeOverlay joke={currentJoke} onDismiss={() => setCurrentJoke(null)} />
-    </div>
+    </SlideChrome>
   );
 }
 

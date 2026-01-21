@@ -1,8 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
+// Check if running in Tauri
+const isTauri = () => typeof window !== 'undefined' && window.__TAURI_INTERNALS__;
+
 /**
  * Hook to manage audience/stage window and postMessage communication
  * The audience window shows clean slides for projector/external display
+ * Supports both web (window.open) and Tauri (WebviewWindow) modes
  * 
  * @param {object} options - Configuration options
  * @param {number} options.currentIndex - Current slide index
@@ -27,10 +31,74 @@ export default function useAudienceWindow({
   const [audienceWindow, setAudienceWindow] = useState(null);
   const [isAudienceOpen, setIsAudienceOpen] = useState(false);
   const [presentationStartTime, setPresentationStartTime] = useState(null);
+  const [tauriWindow, setTauriWindow] = useState(null);
   const lastSentState = useRef(null);
+  const tauriUnlisten = useRef(null);
 
   // Open audience/stage window
-  const openAudienceWindow = useCallback(() => {
+  const openAudienceWindow = useCallback(async () => {
+    // Tauri mode - use native WebviewWindow
+    if (isTauri()) {
+      // If already open, just focus
+      if (tauriWindow) {
+        try {
+          await tauriWindow.setFocus();
+        } catch (e) {
+          console.log('[Tauri] Window may have been closed, creating new one');
+          setTauriWindow(null);
+        }
+        if (tauriWindow) return;
+      }
+
+      try {
+        const { WebviewWindow } = await import('@tauri-apps/api/webviewWindow');
+        const { listen } = await import('@tauri-apps/api/event');
+        
+        console.log('[Tauri] Creating audience window...');
+
+        // Create new audience window
+        const webview = new WebviewWindow('audience', {
+          url: '/audience.html',
+          title: 'LiveSlides - Stage View',
+          width: 1200,
+          height: 800,
+          resizable: true,
+        });
+
+        webview.once('tauri://created', () => {
+          console.log('[Tauri] Audience window created successfully');
+          setTauriWindow(webview);
+          setIsAudienceOpen(true);
+          setPresentationStartTime(Date.now());
+        });
+
+        webview.once('tauri://error', (e) => {
+          console.error('[Tauri] Failed to create audience window:', e);
+        });
+
+        // Listen for window destroy (after close completes)
+        webview.once('tauri://destroyed', () => {
+          console.log('[Tauri] Audience window destroyed');
+          setTauriWindow(null);
+          setIsAudienceOpen(false);
+        });
+
+        // Listen for audience ready event
+        if (tauriUnlisten.current) {
+          tauriUnlisten.current();
+        }
+        tauriUnlisten.current = await listen('audience-ready', () => {
+          console.log('[Tauri] Audience window ready, sending state...');
+          lastSentState.current = null; // Force re-send
+        });
+
+      } catch (e) {
+        console.error('[Tauri] Error opening audience window:', e);
+      }
+      return;
+    }
+
+    // Web mode - use window.open
     if (audienceWindow && !audienceWindow.closed) {
       audienceWindow.focus();
       return;
@@ -55,27 +123,42 @@ export default function useAudienceWindow({
   }, [audienceWindow]);
 
   // Close audience window
-  const closeAudienceWindow = useCallback(() => {
+  const closeAudienceWindow = useCallback(async () => {
+    // Tauri mode
+    if (isTauri() && tauriWindow) {
+      try {
+        await tauriWindow.close();
+      } catch (e) {
+        console.error('[Tauri] Error closing audience window:', e);
+      }
+      setTauriWindow(null);
+      setIsAudienceOpen(false);
+      if (tauriUnlisten.current) {
+        tauriUnlisten.current();
+        tauriUnlisten.current = null;
+      }
+      return;
+    }
+
+    // Web mode
     if (audienceWindow && !audienceWindow.closed) {
       audienceWindow.close();
     }
     setAudienceWindow(null);
     setIsAudienceOpen(false);
-  }, [audienceWindow]);
+  }, [audienceWindow, tauriWindow]);
 
   // Toggle audience window
   const toggleAudienceWindow = useCallback(() => {
-    if (isAudienceOpen && audienceWindow && !audienceWindow.closed) {
+    if (isAudienceOpen) {
       closeAudienceWindow();
     } else {
       openAudienceWindow();
     }
-  }, [isAudienceOpen, audienceWindow, openAudienceWindow, closeAudienceWindow]);
+  }, [isAudienceOpen, openAudienceWindow, closeAudienceWindow]);
 
   // Send state to audience window
-  const sendStateToAudience = useCallback(() => {
-    if (!audienceWindow || audienceWindow.closed) return;
-
+  const sendStateToAudience = useCallback(async () => {
     const nextSlide = slides[currentIndex + 1] || null;
     
     // Extract only serializable properties (exclude React components)
@@ -107,7 +190,7 @@ export default function useAudienceWindow({
       nextSlide: serializeSlide(nextSlide),
       jokes: jokesConfig?.jokes || [],
       presentationStartTime,
-      deckId, // For presenter to load correct deck
+      deckId,
     };
 
     // Avoid sending duplicate state
@@ -115,13 +198,27 @@ export default function useAudienceWindow({
     if (lastSentState.current === stateKey) return;
     lastSentState.current = stateKey;
 
+    // Tauri mode - use events
+    if (isTauri() && isAudienceOpen) {
+      try {
+        const { emit } = await import('@tauri-apps/api/event');
+        console.log('[Tauri] Emitting slide-state:', { currentIndex, totalSlides, deckId });
+        await emit('slide-state', state);
+      } catch (e) {
+        console.error('[Tauri] Failed to emit state:', e);
+      }
+      return;
+    }
+
+    // Web mode - use postMessage
+    if (!audienceWindow || audienceWindow.closed) return;
     try {
       console.log('[Presenter] Sending state to audience:', { currentIndex, totalSlides, deckId });
       audienceWindow.postMessage(state, '*');
     } catch (e) {
       console.error('[Presenter] Failed to send state to audience window:', e);
     }
-  }, [audienceWindow, currentIndex, totalSlides, currentSlide, slides, jokesConfig, presentationStartTime, deckId]);
+  }, [audienceWindow, isAudienceOpen, currentIndex, totalSlides, currentSlide, slides, jokesConfig, presentationStartTime, deckId]);
 
   // Handle messages from audience window
   useEffect(() => {
@@ -169,24 +266,48 @@ export default function useAudienceWindow({
   }, [audienceWindow]);
 
   // Send joke to audience window
-  const sendJokeToAudience = useCallback((joke) => {
+  const sendJokeToAudience = useCallback(async (joke) => {
+    // Tauri mode
+    if (isTauri() && isAudienceOpen) {
+      try {
+        const { emit } = await import('@tauri-apps/api/event');
+        await emit('show-joke', { joke });
+      } catch (e) {
+        console.error('[Tauri] Failed to emit joke:', e);
+      }
+      return;
+    }
+
+    // Web mode
     if (!audienceWindow || audienceWindow.closed) return;
     try {
       audienceWindow.postMessage({ type: 'SHOW_JOKE', joke }, '*');
     } catch (e) {
       console.error('[Presenter] Failed to send joke to audience:', e);
     }
-  }, [audienceWindow]);
+  }, [audienceWindow, isAudienceOpen]);
 
   // Dismiss joke in audience window
-  const dismissJokeInAudience = useCallback(() => {
+  const dismissJokeInAudience = useCallback(async () => {
+    // Tauri mode
+    if (isTauri() && isAudienceOpen) {
+      try {
+        const { emit } = await import('@tauri-apps/api/event');
+        await emit('dismiss-joke', {});
+      } catch (e) {
+        console.error('[Tauri] Failed to emit dismiss joke:', e);
+      }
+      return;
+    }
+
+    // Web mode
     if (!audienceWindow || audienceWindow.closed) return;
     try {
       audienceWindow.postMessage({ type: 'DISMISS_JOKE' }, '*');
     } catch (e) {
       console.error('[Presenter] Failed to dismiss joke in audience:', e);
     }
-  }, [audienceWindow]);
+  }, [audienceWindow, isAudienceOpen]);
 
   return {
     isAudienceOpen,

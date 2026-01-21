@@ -21,17 +21,17 @@ export default function SlideChrome({
       </div>
 
       {/* Bottom controls */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-white/10 backdrop-blur-md px-4 py-3 rounded-xl text-sm shadow-lg z-50">
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-4 bg-white/10 backdrop-blur-md px-6 py-4 rounded-2xl text-lg shadow-lg z-50">
         <button 
           onClick={onPrev}
           disabled={!canGoPrev}
           title="Previous (←)"
-          className="px-3 py-1.5 rounded hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          className="px-5 py-3 rounded-lg hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all text-2xl"
         >
           ◀
         </button>
         
-        <div className="opacity-80 tabular-nums min-w-[60px] text-center">
+        <div className="opacity-80 tabular-nums min-w-[80px] text-center text-xl font-medium">
           {currentIndex + 1} / {totalSlides}
         </div>
         
@@ -39,17 +39,17 @@ export default function SlideChrome({
           onClick={onNext}
           disabled={!canGoNext}
           title="Next (→ or Space)"
-          className="px-3 py-1.5 rounded hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          className="px-5 py-3 rounded-lg hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all text-2xl"
         >
           ▶
         </button>
         
-        <div className="mx-1 w-px bg-white/20 h-6" />
+        <div className="mx-2 w-px bg-white/20 h-8" />
         
         <button 
           onClick={onToggleFullscreen}
           title="Fullscreen (F)"
-          className="px-3 py-1.5 rounded hover:bg-white/10 transition-all"
+          className="px-4 py-3 rounded-lg hover:bg-white/20 transition-all text-2xl"
         >
           ⛶
         </button>
@@ -57,13 +57,13 @@ export default function SlideChrome({
         {/* Camera overlay toggle - only show if camera overlay is configured */}
         {cameraOverlay && cameraOverlay.enabled && (
           <>
-            <div className="mx-1 w-px bg-white/20 h-6" />
+            <div className="mx-2 w-px bg-white/20 h-8" />
             <button 
               onClick={onToggleCameraOverlay}
               title="Toggle Camera Overlay (C)"
-              className="px-3 py-1.5 rounded hover:bg-white/10 transition-all"
+              className={`px-4 py-3 rounded-lg hover:bg-white/20 transition-all text-2xl ${cameraOverlayVisible ? '' : 'opacity-50'}`}
             >
-              {cameraOverlayVisible ? '📹' : '📹̶'}
+              📹
             </button>
           </>
         )}

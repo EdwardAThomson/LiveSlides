@@ -106,35 +106,38 @@ src/
 │   └── useJokeManager.js     # Joke overlay system
 └── App.jsx                   # Main app component
 ```
-##  Current Status: Phase 3 Complete ✨
+##  Current Status: Phase 4 Complete ✨
 
 **Phase 1 - Core Engine:**
--  All slide types (Text, Image, YouTube, Iframe, MDX)
--  Keyboard navigation & click-to-advance
--  Fullscreen support
--  Touch/swipe gestures
+- ✅ All slide types (Text, Image, YouTube, Iframe, MDX)
+- ✅ Keyboard navigation & click-to-advance
+- ✅ Fullscreen support
+- ✅ Touch/swipe gestures
 
 **Phase 2 - MDX & Deck Loading:**
--  Deck loader (deck.json + MDX files)
--  MDX primitives (Grid, Block, Media, Iframe, YouTube, Callout)
--  Layout system (center, split layouts, three-up, full)
--  Frontmatter support for slide notes
--  Multiple deck management
+- ✅ Deck loader (deck.json + MDX files)
+- ✅ MDX primitives (Grid, Block, Media, Iframe, YouTube, Callout)
+- ✅ Layout system (center, split layouts, three-up, full)
+- ✅ Frontmatter support for slide notes
+- ✅ Multiple deck management
 
 **Phase 3 - Polish & Interactivity:**
--  10 smooth transitions with Framer Motion
--  Joke overlays with hotkeys
--  Stagger animations for MDX content
--  Gradient borders on all media
--  Dropdown deck selector
--  Per-deck slide position memory
--  Camera overlay for presenter feeds
--  **Presenter View** with notes, timer, controls & joke palette
+- ✅ 10 smooth transitions with Framer Motion
+- ✅ Joke overlays with hotkeys
+- ✅ Stagger animations for MDX content
+- ✅ Gradient borders on all media
+- ✅ Dropdown deck selector
+- ✅ Per-deck slide position memory
+- ✅ Camera overlay for presenter feeds
+- ✅ **Presenter View** with notes, timer, controls & joke palette
 
 **Next Phase:**
--  Export to PDF/static site
--  Advanced slide types (Terminal, Code highlighting, Charts)
--  Tauri desktop build
+- ⬜ Export to PDF/static site
+- ⬜ Advanced slide types (Terminal, Code highlighting, Charts)
+- ⬜ File dialog for opening deck folders
+- ⬜ Global hotkeys (system-wide)
+
+
 
 ##  Documentation
 
@@ -149,6 +152,44 @@ src/
 - **Tailwind CSS** - Styling
 - **MDX** - Markdown with JSX for slide authoring
 - **Framer Motion** - Smooth animations & transitions
+- **Tauri v2** - Desktop application wrapper (Rust backend)
+
+## 🖥️ Desktop App (Tauri)
+
+LiveSlides can run as a native desktop application with enhanced multi-window support.
+
+### Prerequisites
+- **Rust** - Install via [rustup](https://rustup.rs/)
+- **Linux**: `sudo apt-get install libwebkit2gtk-4.1-dev build-essential libssl-dev libayatana-appindicator3-dev librsvg2-dev`
+- **macOS**: Xcode Command Line Tools
+- **Windows**: Visual Studio Build Tools
+
+### Running the Desktop App
+
+**Option 1: Two terminals (recommended for development)**
+```bash
+# Terminal 1 - Vite dev server
+npm run dev
+
+# Terminal 2 - Tauri app
+cd src-tauri && cargo run
+```
+
+**Option 2: Combined command**
+```bash
+npm run tauri:dev
+```
+
+### Building for Production
+```bash
+npm run tauri:build
+```
+
+### Desktop Features
+- **Native multi-window**: Presenter and Stage views as separate native windows
+- **No popup blockers**: Stage window opens reliably via Tauri APIs
+- **Cross-window sync**: Slides, jokes, and state sync via Tauri events
+- **Fullscreen support**: Native fullscreen on any display
 
 ## 🎯 Quick Start: Build Your Presentation
 
