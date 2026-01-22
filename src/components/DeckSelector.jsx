@@ -1,10 +1,22 @@
 import { useState, useRef, useEffect } from 'react';
 
+// Check if running in Tauri
+const isTauri = () => typeof window !== 'undefined' && window.__TAURI_INTERNALS__;
+
 /**
  * DeckSelector - Dropdown menu for selecting presentation decks
+ * Supports both bundled decks and external decks from the registry (Tauri only)
  */
-export default function DeckSelector({ decks, currentDeck, onSelectDeck }) {
+export default function DeckSelector({ 
+  decks, 
+  currentDeck, 
+  onSelectDeck,
+  externalDecks = [],
+  onAddDeck,
+  onSelectExternalDeck,
+}) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isAddingDeck, setIsAddingDeck] = useState(false);
   const dropdownRef = useRef(null);
 
   // Close dropdown when clicking outside
@@ -26,7 +38,30 @@ export default function DeckSelector({ decks, currentDeck, onSelectDeck }) {
     setIsOpen(false);
   };
 
-  const currentDeckInfo = decks.find(d => d.id === currentDeck);
+  const handleSelectExternal = (deck) => {
+    if (onSelectExternalDeck) {
+      onSelectExternalDeck(deck);
+    }
+    setIsOpen(false);
+  };
+
+  const handleAddDeck = async () => {
+    if (onAddDeck) {
+      setIsAddingDeck(true);
+      try {
+        await onAddDeck();
+      } finally {
+        setIsAddingDeck(false);
+      }
+    }
+    setIsOpen(false);
+  };
+
+  // Find current deck info from either bundled or external decks
+  const currentDeckInfo = decks.find(d => d.id === currentDeck) || 
+    externalDecks.find(d => d.id === currentDeck);
+  
+  const showExternalSection = isTauri() && (externalDecks.length > 0 || onAddDeck);
 
   return (
     <div ref={dropdownRef} className="relative z-50">
@@ -72,6 +107,7 @@ export default function DeckSelector({ decks, currentDeck, onSelectDeck }) {
           shadow-2xl
           overflow-hidden
         ">
+          {/* Bundled Decks */}
           {decks.map((deck) => (
             <button
               key={deck.id}
@@ -105,6 +141,74 @@ export default function DeckSelector({ decks, currentDeck, onSelectDeck }) {
               )}
             </button>
           ))}
+
+          {/* External Decks Section (Tauri only) */}
+          {showExternalSection && (
+            <>
+              <div className="border-t border-white/10 my-1" />
+              <div className="px-4 py-2 text-xs text-white/40 uppercase tracking-wide">
+                Your Decks
+              </div>
+              {externalDecks.map((deck) => (
+                <button
+                  key={deck.id}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSelectExternal(deck);
+                  }}
+                  className={`
+                    w-full
+                    flex items-center gap-3
+                    px-4 py-3
+                    text-left
+                    transition-colors
+                    ${deck.id === currentDeck 
+                      ? 'bg-blue-500/30 text-white' 
+                      : 'text-white/80 hover:bg-white/10 hover:text-white'
+                    }
+                  `}
+                >
+                  <span className="text-xl">📁</span>
+                  <div className="flex-1">
+                    <div className="font-medium">{deck.name}</div>
+                    <div className="text-xs text-white/40 mt-0.5 truncate max-w-[180px]">
+                      {deck.path}
+                    </div>
+                  </div>
+                  {deck.id === currentDeck && (
+                    <svg className="w-5 h-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                </button>
+              ))}
+              
+              {/* Add Deck Button */}
+              {onAddDeck && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleAddDeck();
+                  }}
+                  disabled={isAddingDeck}
+                  className="
+                    w-full
+                    flex items-center gap-3
+                    px-4 py-3
+                    text-left
+                    transition-colors
+                    text-white/60 hover:bg-white/10 hover:text-white
+                    disabled:opacity-50
+                  "
+                >
+                  <span className="text-xl">{isAddingDeck ? '⏳' : '➕'}</span>
+                  <div className="font-medium">
+                    {isAddingDeck ? 'Opening...' : 'Add Deck Folder...'}
+                  </div>
+                </button>
+              )}
+            </>
+          )}
         </div>
       )}
     </div>

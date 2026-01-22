@@ -11,11 +11,28 @@
  * - Rounded corners to match typical camera feeds
  */
 
+// Default camera overlay configuration
+const DEFAULT_CONFIG = {
+  enabled: true,
+  position: 'bottom-left',
+  width: '420px',
+  height: '240px',
+  borderRadius: '12px',
+  gradient: true,
+  gradientColors: ['#8b5cf6', '#ec4899', '#f59e0b'], // purple -> pink -> amber
+  backgroundColor: '#000000',
+  opacity: 1,
+  margin: '0px',
+};
+
 export default function CameraOverlay({ config, visible = true }) {
-  // Return null if no camera overlay configured or if hidden
-  if (!config || !config.enabled || !visible) {
+  // Return null if not visible
+  if (!visible) {
     return null;
   }
+
+  // Use provided config or default
+  const effectiveConfig = config?.enabled ? config : DEFAULT_CONFIG;
 
   const {
     position = 'bottom-left',
@@ -23,11 +40,11 @@ export default function CameraOverlay({ config, visible = true }) {
     height = '240px',
     borderRadius = '12px',
     gradient = true,
-    gradientColors = ['#8b5cf6', '#ec4899', '#f59e0b'], // purple -> pink -> amber
+    gradientColors = ['#8b5cf6', '#ec4899', '#f59e0b'],
     backgroundColor = '#000000',
     opacity = 1,
     margin = '0px',
-  } = config;
+  } = effectiveConfig;
 
   // Position styles based on config
   const positionStyles = {

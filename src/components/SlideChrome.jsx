@@ -54,19 +54,15 @@ export default function SlideChrome({
           ⛶
         </button>
         
-        {/* Camera overlay toggle - only show if camera overlay is configured */}
-        {cameraOverlay && cameraOverlay.enabled && (
-          <>
-            <div className="mx-2 w-px bg-white/20 h-8" />
-            <button 
-              onClick={onToggleCameraOverlay}
-              title="Toggle Camera Overlay (C)"
-              className={`px-4 py-3 rounded-lg hover:bg-white/20 transition-all text-2xl ${cameraOverlayVisible ? '' : 'opacity-50'}`}
-            >
-              📹
-            </button>
-          </>
-        )}
+        {/* Camera overlay toggle - always available */}
+        <div className="mx-2 w-px bg-white/20 h-8" />
+        <button 
+          onClick={onToggleCameraOverlay}
+          title="Toggle Camera Overlay (C)"
+          className={`px-4 py-3 rounded-lg hover:bg-white/20 transition-all text-2xl ${cameraOverlayVisible ? '' : 'opacity-50'}`}
+        >
+          📹
+        </button>
       </div>
 
       {/* Camera overlay mask */}

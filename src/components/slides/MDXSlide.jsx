@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { Component as ReactComponent, useState, useEffect } from 'react';
 import { mdxComponents } from '../../lib/mdxComponents';
 import SlideLayout from '../SlideLayout';
 
@@ -25,6 +26,38 @@ const itemVariants = {
   }
 };
 
+// Error boundary wrapper for MDX components
+function SafeComponent({ Component, components }) {
+  const [error, setError] = useState(null);
+  
+  useEffect(() => {
+    setError(null); // Reset error when component changes
+  }, [Component]);
+  
+  if (error) {
+    return (
+      <div className="text-red-400 text-center p-8">
+        <h2 className="text-2xl font-bold mb-4">Slide Render Error</h2>
+        <p className="text-lg">{error.message}</p>
+      </div>
+    );
+  }
+  
+  try {
+    return <Component components={components} />;
+  } catch (err) {
+    console.error('[MDXSlide] Error rendering component:', err);
+    // Set error state for re-render
+    setTimeout(() => setError(err), 0);
+    return (
+      <div className="text-red-400 text-center p-8">
+        <h2 className="text-2xl font-bold mb-4">Slide Render Error</h2>
+        <p className="text-lg">{err.message}</p>
+      </div>
+    );
+  }
+}
+
 export default function MDXSlide({ Component, layout = 'center' }) {
   if (!Component) {
     return (
@@ -35,6 +68,8 @@ export default function MDXSlide({ Component, layout = 'center' }) {
     );
   }
 
+  console.log('[MDXSlide] Rendering component:', typeof Component, Component?.name || 'anonymous');
+
   return (
     <SlideLayout layout={layout}>
       <motion.div 
@@ -43,7 +78,7 @@ export default function MDXSlide({ Component, layout = 'center' }) {
         initial="hidden"
         animate="visible"
       >
-        <Component components={mdxComponents} />
+        <SafeComponent Component={Component} components={mdxComponents} />
       </motion.div>
     </SlideLayout>
   );

@@ -15,11 +15,16 @@ import useJokeManager from './hooks/useJokeManager';
 import useAudienceWindow from './hooks/useAudienceWindow';
 import PresenterTimer from './components/PresenterTimer';
 import { processDeck } from './lib/deckLoader';
+import { loadRegistry, addDeckToRegistry, openDeckFolderDialog, updateDeckLastOpened } from './lib/deckRegistry';
+import { loadExternalDeck } from './lib/externalDeckLoader';
 import myPresentation from './decks/my-presentation';
 import demoDeck from './decks/demo-deck';
 import quickDemo from './decks/quick-demo';
 import vibeCoding from './decks/vibe-coding';
 import aiFrameworks from './decks/ai-frameworks';
+
+// Check if running in Tauri
+const isTauri = () => typeof window !== 'undefined' && window.__TAURI_INTERNALS__;
 
 
 // Available decks configuration
@@ -66,6 +71,11 @@ function App() {
   const [transitionKey, setTransitionKey] = useState(0);
   const containerRef = useRef(null);
   
+  // External decks from registry (Tauri only)
+  const [externalDecks, setExternalDecks] = useState([]);
+  const [loadingExternalDeck, setLoadingExternalDeck] = useState(false);
+  const [currentExternalDeck, setCurrentExternalDeck] = useState(null); // Currently loaded external deck data
+  
   // Track slide position for each deck - this is our source of truth
   const [deckPositions, setDeckPositions] = useState({
     'quick-demo': 0,
@@ -74,6 +84,23 @@ function App() {
     'demo-deck': 0,
     'ai-frameworks': 0,
   });
+  
+  // Load external deck registry on mount (Tauri only)
+  useEffect(() => {
+    if (!isTauri()) return;
+    
+    async function loadExternalDecks() {
+      try {
+        const registry = await loadRegistry();
+        setExternalDecks(registry.decks || []);
+        console.log('[App] Loaded external decks:', registry.decks?.length || 0);
+      } catch (error) {
+        console.error('[App] Failed to load deck registry:', error);
+      }
+    }
+    
+    loadExternalDecks();
+  }, []);
   
   // Get current index for the active deck
   const currentIndex = deckPositions[currentDeck] || 0;
@@ -139,7 +166,63 @@ function App() {
     }
   }, [currentJoke, sendJokeToAudience, dismissJokeInAudience]);
 
-  // Load the selected deck
+  // Handle adding a new external deck
+  const handleAddDeck = useCallback(async () => {
+    if (!isTauri()) return;
+    
+    try {
+      const folderPath = await openDeckFolderDialog();
+      if (!folderPath) return; // User cancelled
+      
+      const result = await addDeckToRegistry(folderPath);
+      if (result.success) {
+        // Reload the registry
+        const registry = await loadRegistry();
+        setExternalDecks(registry.decks || []);
+        console.log('[App] Added deck:', result.deck.name);
+      } else {
+        alert(`Failed to add deck: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('[App] Error adding deck:', error);
+      alert(`Error adding deck: ${error.message}`);
+    }
+  }, []);
+
+  // Handle selecting an external deck
+  const handleSelectExternalDeck = useCallback(async (deck) => {
+    if (!isTauri()) return;
+    
+    setLoadingExternalDeck(true);
+    try {
+      console.log('[App] Loading external deck:', deck.name);
+      const deckData = await loadExternalDeck(deck.path);
+      
+      setCurrentExternalDeck(deckData);
+      setSlides(deckData.slides);
+      setJokesConfig(deckData.jokes);
+      setCameraOverlay(deckData.config.cameraOverlay || null);
+      setCurrentDeck(deck.id);
+      
+      // Initialize position for this deck if not exists
+      setDeckPositions(prev => ({
+        ...prev,
+        [deck.id]: prev[deck.id] || 0,
+      }));
+      
+      // Update last opened timestamp
+      await updateDeckLastOpened(deck.id);
+      
+      console.log('[App] Loaded external deck with', deckData.slides.length, 'slides');
+    } catch (error) {
+      console.error('[App] Error loading external deck:', error);
+      alert(`Error loading deck: ${error.message}`);
+    } finally {
+      setLoadingExternalDeck(false);
+    }
+  }, []);
+
+  // Load the selected deck (bundled decks only - external decks handled by handleSelectExternalDeck)
   useEffect(() => {
     console.log('Loading deck:', currentDeck);
     console.log('myPresentation:', myPresentation);
@@ -184,6 +267,14 @@ function App() {
           setCameraOverlay(aiFrameworks.config.cameraOverlay);
           break;
         default:
+          // Check if this is an external deck - if so, skip this effect
+          // External decks are loaded by handleSelectExternalDeck, not this effect
+          if (externalDecks.some(d => d.id === currentDeck)) {
+            console.log('[App] Skipping bundled deck load - this is an external deck:', currentDeck);
+            return;
+          }
+          // Fall back to quick-demo for unknown decks
+          console.log('[App] Unknown deck, falling back to quick-demo');
           loadedSlides = processDeck(quickDemo.config, quickDemo.mdxModules);
           setJokesConfig(null);
           setCameraOverlay(null);
@@ -201,6 +292,7 @@ function App() {
         error: `Failed to load deck: ${error.message}`
       }]);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentDeck]);
 
   // Use navigation hook with controlled state
@@ -329,6 +421,9 @@ function App() {
             decks={availableDecks}
             currentDeck={currentDeck}
             onSelectDeck={(deckId) => setCurrentDeck(deckId)}
+            externalDecks={externalDecks}
+            onAddDeck={isTauri() ? handleAddDeck : undefined}
+            onSelectExternalDeck={handleSelectExternalDeck}
           />
           <div className="flex items-center gap-2">
             <span className="text-green-400">●</span>

@@ -851,6 +851,181 @@ window.postMessage({ type: 'SLIDE_STATE', ... }, '*');
 
 ---
 
+## Phase 4.5: External Deck Loading (Sprint 4.5)
+
+### Goal
+Load presentation decks from anywhere on the filesystem, not just bundled decks. Enable users to keep their presentations separate from the app codebase.
+
+### New Dependencies
+- `@mdx-js/mdx` - Runtime MDX compilation
+- Tauri plugins: `fs`, `dialog`
+
+### Architecture
+
+#### Deck Registry Location
+```
+~/Documents/LiveSlides/
+├── registry.json          # List of all known decks
+└── decks/                  # Optional: default location for new decks
+    └── my-talk/
+        ├── deck.json
+        ├── slides/
+        └── assets/
+```
+
+#### Registry Schema (`registry.json`)
+```json
+{
+  "version": 1,
+  "decks": [
+    {
+      "id": "my-talk",
+      "name": "My Conference Talk",
+      "path": "/home/user/talks/my-talk",
+      "lastOpened": "2026-01-22T20:30:00Z"
+    }
+  ]
+}
+```
+
+#### Deck Folder Structure
+```
+my-talk/
+├── deck.json              # Slide order, layouts, camera overlay, jokes
+├── slides/
+│   ├── 01-intro.mdx
+│   ├── 02-content.mdx
+│   └── ...
+├── assets/
+│   └── images/
+└── jokes/                 # Optional joke media
+```
+
+### File Structure Additions
+```
+/src
+  /lib
+    deckRegistry.js        # Load/save registry.json via Tauri
+    externalDeckLoader.js  # Runtime MDX compilation for external decks
+  /components
+    AddDeckDialog.jsx      # Folder picker + validation
+```
+
+### Implementation Details
+
+#### 1. Tauri Filesystem Permissions
+```json
+// src-tauri/capabilities/default.json
+{
+  "permissions": [
+    "fs:default",
+    "fs:allow-read-text-file",
+    "fs:allow-write-text-file",
+    "fs:allow-exists",
+    "dialog:allow-open"
+  ]
+}
+```
+
+#### 2. Registry Loader (`deckRegistry.js`)
+```javascript
+import { readTextFile, writeTextFile, exists } from '@tauri-apps/plugin-fs';
+import { documentDir, join } from '@tauri-apps/api/path';
+
+const REGISTRY_DIR = 'LiveSlides';
+const REGISTRY_FILE = 'registry.json';
+
+export async function loadRegistry() {
+  const docDir = await documentDir();
+  const registryPath = await join(docDir, REGISTRY_DIR, REGISTRY_FILE);
+  
+  if (!(await exists(registryPath))) {
+    return { version: 1, decks: [] };
+  }
+  
+  const content = await readTextFile(registryPath);
+  return JSON.parse(content);
+}
+
+export async function saveRegistry(registry) {
+  const docDir = await documentDir();
+  const registryPath = await join(docDir, REGISTRY_DIR, REGISTRY_FILE);
+  await writeTextFile(registryPath, JSON.stringify(registry, null, 2));
+}
+
+export async function addDeckToRegistry(deckPath) {
+  const registry = await loadRegistry();
+  const deckJson = await readTextFile(await join(deckPath, 'deck.json'));
+  const config = JSON.parse(deckJson);
+  
+  registry.decks.push({
+    id: crypto.randomUUID(),
+    name: config.name || path.basename(deckPath),
+    path: deckPath,
+    lastOpened: new Date().toISOString()
+  });
+  
+  await saveRegistry(registry);
+  return registry;
+}
+```
+
+#### 3. External Deck Loader (`externalDeckLoader.js`)
+```javascript
+import { compile } from '@mdx-js/mdx';
+import { readTextFile } from '@tauri-apps/plugin-fs';
+import { convertFileSrc } from '@tauri-apps/api/core';
+
+export async function loadExternalDeck(deckPath) {
+  // Load deck.json
+  const configPath = `${deckPath}/deck.json`;
+  const configContent = await readTextFile(configPath);
+  const config = JSON.parse(configContent);
+  
+  // Load and compile each MDX slide
+  const slides = await Promise.all(
+    config.slides.map(async (slideDef) => {
+      if (slideDef.src?.endsWith('.mdx')) {
+        const mdxPath = `${deckPath}/${slideDef.src}`;
+        const mdxContent = await readTextFile(mdxPath);
+        const compiled = await compile(mdxContent, { outputFormat: 'function-body' });
+        // Create component from compiled code
+        const Component = await evalMDX(compiled.toString());
+        return { ...slideDef, type: 'mdx', Component };
+      }
+      return slideDef;
+    })
+  );
+  
+  return { config, slides };
+}
+
+// Convert local file paths to Tauri asset URLs
+export function resolveAssetUrl(deckPath, assetPath) {
+  if (assetPath.startsWith('http')) return assetPath;
+  const fullPath = `${deckPath}/${assetPath.replace(/^\.\//, '')}`;
+  return convertFileSrc(fullPath);
+}
+```
+
+#### 4. Flow
+1. **App starts** → Check if Tauri, load registry
+2. **DeckSelector shows** → Bundled decks + external decks from registry
+3. **User selects external deck** → Load via `externalDeckLoader`
+4. **"Add Deck" button** → Opens folder dialog, validates, adds to registry
+
+### Deliverables
+- [ ] Tauri fs/dialog plugins installed and configured
+- [ ] `deckRegistry.js` - load/save/add decks to registry
+- [ ] `externalDeckLoader.js` - runtime MDX compilation
+- [ ] Asset URL conversion for local files
+- [ ] Updated DeckSelector with external deck support
+- [ ] "Add Deck" dialog with folder picker
+- [ ] Registry auto-created on first run
+- [ ] Error handling for invalid deck folders
+
+---
+
 ## Critical Technical Decisions
 
 ### 1. MDX Compilation Strategy
