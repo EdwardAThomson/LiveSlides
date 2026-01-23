@@ -4,7 +4,7 @@
 
 Create stunning, interactive presentations using Markdown/MDX and React components. Because your slides are pure code, you can leverage AI assistants to generate, customize, and refine your content instantly. Embed live web apps, videos, and rich media with beautiful gradient borders. Perfect for technical talks, live demos, and YouTube presentations.
 
-![LiveSlides Screenshot](./screenshots/features.png)
+![LiveSlides Screenshot](./screenshots/liveslides.png)
 
 ##  Quick Start
 
