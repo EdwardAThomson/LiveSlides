@@ -83,6 +83,7 @@ function App() {
   const [cameraOverlayVisible, setCameraOverlayVisible] = useState(true);
   const [transitionKind, setTransitionKind] = useState('fade');
   const [transitionKey, setTransitionKey] = useState(0);
+  const [theme, setTheme] = useState('dark');
   const containerRef = useRef(null);
 
   // External decks from registry (Tauri only)
@@ -150,6 +151,8 @@ function App() {
     slides,
     jokesConfig,
     deckId: currentDeck,
+    cameraOverlayVisible,
+    theme,
     onNext: () => {
       if (currentIndex < slides.length - 1) {
         setCurrentIndex(prev => prev + 1);
@@ -235,9 +238,6 @@ function App() {
       setLoadingExternalDeck(false);
     }
   }, []);
-
-  // Theme state
-  const [theme, setTheme] = useState('dark');
 
   // Load the selected deck (bundled decks only - external decks handled by handleSelectExternalDeck)
   useEffect(() => {
@@ -606,15 +606,28 @@ function App() {
           </div>
 
           {/* Stage window toggle */}
-          <button
-            onClick={toggleAudienceWindow}
-            className={`py-3 px-4 rounded-xl font-semibold transition-colors ${isAudienceOpen
-              ? 'bg-green-600 hover:bg-green-500'
-              : 'bg-blue-600 hover:bg-blue-500'
-              }`}
-          >
-            {isAudienceOpen ? '📺 Stage Window Open' : '📺 Open Stage Window (P)'}
-          </button>
+          <div className="flex flex-col gap-2">
+            <button
+              onClick={toggleAudienceWindow}
+              className={`py-3 px-4 rounded-xl font-semibold transition-colors ${isAudienceOpen
+                ? 'bg-green-600 hover:bg-green-500'
+                : 'bg-blue-600 hover:bg-blue-500'
+                }`}
+            >
+              {isAudienceOpen ? '📺 Stage Window Open' : '📺 Open Stage Window (P)'}
+            </button>
+
+            <button
+              onClick={toggleCameraOverlay}
+              className={`py-3 px-4 rounded-xl font-semibold transition-colors border ${cameraOverlayVisible
+                ? 'bg-purple-600 hover:bg-purple-500 text-white'
+                : 'bg-transparent hover:bg-white/5'
+                }`}
+              style={{ borderColor: 'var(--border-main)' }}
+            >
+              {cameraOverlayVisible ? '📹 Hide Camera (C)' : '📹 Show Camera (C)'}
+            </button>
+          </div>
 
           {/* Joke triggers */}
           <div

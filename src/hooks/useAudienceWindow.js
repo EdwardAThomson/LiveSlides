@@ -23,6 +23,8 @@ export default function useAudienceWindow({
   slides,
   jokesConfig,
   deckId,
+  cameraOverlayVisible,
+  theme,
   onNext,
   onPrev,
   onGoTo,
@@ -53,7 +55,7 @@ export default function useAudienceWindow({
       try {
         const { WebviewWindow } = await import('@tauri-apps/api/webviewWindow');
         const { listen } = await import('@tauri-apps/api/event');
-        
+
         console.log('[Tauri] Creating audience window...');
 
         // Create new audience window
@@ -160,10 +162,10 @@ export default function useAudienceWindow({
   // Send state to audience window
   const sendStateToAudience = useCallback(async () => {
     const nextSlide = slides[currentIndex + 1] || null;
-    
+
     // Check if this is an external deck (ID is a UUID)
     const isExternalDeck = deckId && deckId.includes('-') && deckId.length > 30;
-    
+
     // Extract only serializable properties (exclude React components)
     const serializeSlide = (slide) => {
       if (!slide) return null;
@@ -194,13 +196,15 @@ export default function useAudienceWindow({
       jokes: jokesConfig?.jokes || [],
       presentationStartTime,
       deckId,
+      cameraOverlayVisible,
+      theme,
       // For external decks, send all serialized slides so audience can render them
       isExternalDeck,
       externalSlides: isExternalDeck ? slides.map(serializeSlide) : null,
     };
 
     // Avoid sending duplicate state
-    const stateKey = JSON.stringify({ currentIndex, totalSlides, deckId });
+    const stateKey = JSON.stringify({ currentIndex, totalSlides, deckId, cameraOverlayVisible, theme });
     if (lastSentState.current === stateKey) return;
     lastSentState.current = stateKey;
 
@@ -224,7 +228,7 @@ export default function useAudienceWindow({
     } catch (e) {
       console.error('[Presenter] Failed to send state to audience window:', e);
     }
-  }, [audienceWindow, isAudienceOpen, currentIndex, totalSlides, currentSlide, slides, jokesConfig, presentationStartTime, deckId]);
+  }, [audienceWindow, isAudienceOpen, currentIndex, totalSlides, currentSlide, slides, jokesConfig, presentationStartTime, deckId, cameraOverlayVisible, theme]);
 
   // Handle messages from audience window
   useEffect(() => {
