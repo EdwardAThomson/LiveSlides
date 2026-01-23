@@ -1,15 +1,103 @@
 @import "tailwindcss";
 
 :root {
-  /* Theme variables */
-  --slide-bg: #000000;
-  --slide-text: #ffffff;
-  
+  /* Default Dark Theme Variables */
+  --bg-app: #111827;
+  /* gray-900 */
+  --bg-chrome: #1f2937;
+  /* gray-800 */
+  --bg-slide: #000000;
+  --bg-surface: #374151;
+  /* gray-700 */
+  --text-main: #ffffff;
+  --text-muted: #9ca3af;
+  /* gray-400 */
+  --text-dim: #6b7280;
+  /* gray-500 */
+  --border-main: #374151;
+  /* gray-700 */
+  --accent-primary: #8b5cf6;
+  /* purple-600 */
+  --accent-hover: #7c3aed;
+  /* purple-700 */
+
+  /* Callout Variables (Dark) */
+  --bg-info: rgba(59, 130, 246, 0.2);
+  --text-info: #dbeafe;
+  --border-info: #3b82f6;
+
+  --bg-warning: rgba(245, 158, 11, 0.2);
+  --text-warning: #fef3c7;
+  --border-warning: #f59e0b;
+
+  --bg-success: rgba(16, 185, 129, 0.2);
+  --text-success: #d1fae5;
+  --border-success: #10b981;
+
+  --bg-error: rgba(239, 68, 68, 0.2);
+  --text-error: #fee2e2;
+  --border-error: #ef4444;
+
+  /* Block Variables (Dark) */
+  --bg-block-primary: rgba(59, 130, 246, 0.1);
+  --border-block-primary: rgba(59, 130, 246, 0.3);
+  --bg-block-secondary: rgba(107, 114, 128, 0.1);
+  --border-block-secondary: rgba(107, 114, 128, 0.3);
+  --bg-block-accent: rgba(139, 92, 246, 0.1);
+  --border-block-accent: rgba(139, 92, 246, 0.3);
+
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Light Theme Overrides */
+.light-theme {
+  --bg-app: #f9fafb;
+  /* gray-50 */
+  --bg-chrome: #ffffff;
+  --bg-slide: #ffffff;
+  --bg-surface: #f3f4f6;
+  /* gray-100 */
+  --text-main: #111827;
+  /* gray-900 */
+  --text-muted: #4b5563;
+  /* gray-600 */
+  --text-dim: #9ca3af;
+  /* gray-400 */
+  --border-main: #e5e7eb;
+  /* gray-200 */
+  --accent-primary: #7c3aed;
+  /* purple-600 */
+  --accent-hover: #6d28d9;
+  /* purple-700 */
+
+  /* Callout Variables (Light) */
+  --bg-info: #eff6ff;
+  --text-info: #1e40af;
+  --border-info: #3b82f6;
+
+  --bg-warning: #fffbeb;
+  --text-warning: #92400e;
+  --border-warning: #f59e0b;
+
+  --bg-success: #f0fdf4;
+  --text-success: #166534;
+  --border-success: #10b981;
+
+  --bg-error: #fef2f2;
+  --text-error: #991b1b;
+  --border-error: #ef4444;
+
+  /* Block Variables (Light) */
+  --bg-block-primary: #f0f9ff;
+  --border-block-primary: #bae6fd;
+  --bg-block-secondary: #f9fafb;
+  --border-block-secondary: #e5e7eb;
+  --bg-block-accent: #f5f3ff;
+  --border-block-accent: #ddd6fe;
 }
 
 * {

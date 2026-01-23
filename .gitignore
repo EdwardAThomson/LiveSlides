@@ -27,3 +27,4 @@ dist-ssr
 temp
 tmp/
 src/decks
+public/decks

@@ -7,9 +7,9 @@ const isTauri = () => typeof window !== 'undefined' && window.__TAURI_INTERNALS_
  * DeckSelector - Dropdown menu for selecting presentation decks
  * Supports both bundled decks and external decks from the registry (Tauri only)
  */
-export default function DeckSelector({ 
-  decks, 
-  currentDeck, 
+export default function DeckSelector({
+  decks,
+  currentDeck,
   onSelectDeck,
   externalDecks = [],
   onAddDeck,
@@ -58,9 +58,9 @@ export default function DeckSelector({
   };
 
   // Find current deck info from either bundled or external decks
-  const currentDeckInfo = decks.find(d => d.id === currentDeck) || 
+  const currentDeckInfo = decks.find(d => d.id === currentDeck) ||
     externalDecks.find(d => d.id === currentDeck);
-  
+
   const showExternalSection = isTauri() && (externalDecks.length > 0 || onAddDeck);
 
   return (
@@ -75,20 +75,21 @@ export default function DeckSelector({
           flex items-center gap-2
           px-4 py-2
           rounded-lg
-          bg-white/10
-          backdrop-blur-sm
-          hover:bg-white/20
           transition-colors
-          text-white text-sm
-          border border-white/20
+          text-sm
         "
+        style={{
+          backgroundColor: 'var(--bg-chrome)',
+          color: 'var(--text-main)',
+          border: '1px solid var(--border-main)'
+        }}
       >
         <span className="text-lg">{currentDeckInfo?.icon || '📊'}</span>
         <span className="font-medium">{currentDeckInfo?.name || 'Select Deck'}</span>
-        <svg 
+        <svg
           className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-          fill="none" 
-          stroke="currentColor" 
+          fill="none"
+          stroke="currentColor"
           viewBox="0 0 24 24"
         >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -101,12 +102,16 @@ export default function DeckSelector({
           absolute top-full left-0 mt-2
           min-w-[240px]
           rounded-lg
-          bg-gray-900/95
           backdrop-blur-md
-          border border-white/20
           shadow-2xl
           overflow-hidden
-        ">
+          border
+        "
+          style={{
+            backgroundColor: 'var(--bg-chrome)',
+            borderColor: 'var(--border-main)'
+          }}
+        >
           {/* Bundled Decks */}
           {decks.map((deck) => (
             <button
@@ -121,21 +126,21 @@ export default function DeckSelector({
                 px-4 py-3
                 text-left
                 transition-colors
-                ${deck.id === currentDeck 
-                  ? 'bg-blue-500/30 text-white' 
-                  : 'text-white/80 hover:bg-white/10 hover:text-white'
-                }
               `}
+              style={{
+                backgroundColor: deck.id === currentDeck ? 'var(--bg-surface)' : 'transparent',
+                color: deck.id === currentDeck ? 'var(--accent-primary)' : 'var(--text-main)'
+              }}
             >
               <span className="text-xl">{deck.icon}</span>
               <div className="flex-1">
                 <div className="font-medium">{deck.name}</div>
                 {deck.description && (
-                  <div className="text-xs text-white/60 mt-0.5">{deck.description}</div>
+                  <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{deck.description}</div>
                 )}
               </div>
               {deck.id === currentDeck && (
-                <svg className="w-5 h-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-5 h-5" style={{ color: 'var(--accent-primary)' }} fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                 </svg>
               )}
@@ -162,8 +167,8 @@ export default function DeckSelector({
                     px-4 py-3
                     text-left
                     transition-colors
-                    ${deck.id === currentDeck 
-                      ? 'bg-blue-500/30 text-white' 
+                    ${deck.id === currentDeck
+                      ? 'bg-blue-500/30 text-white'
                       : 'text-white/80 hover:bg-white/10 hover:text-white'
                     }
                   `}
@@ -182,7 +187,7 @@ export default function DeckSelector({
                   )}
                 </button>
               ))}
-              
+
               {/* Add Deck Button */}
               {onAddDeck && (
                 <button

@@ -52,9 +52,17 @@ function AudienceView() {
     loadModules();
   }, []);
 
-  // Load deck when deckId changes
+  // Track if current deck is external (loaded via externalSlides)
+  const [isExternalDeck, setIsExternalDeck] = React.useState(false);
+
+  // Load deck when deckId changes (bundled decks only)
   React.useEffect(() => {
     if (!modules || !currentDeckId) return;
+    // Skip loading if this is an external deck - slides come via message
+    if (isExternalDeck) {
+      console.log('[Audience] Skipping deck load - external deck');
+      return;
+    }
     
     async function loadDeck() {
       try {
@@ -74,7 +82,7 @@ function AudienceView() {
       }
     }
     loadDeck();
-  }, [modules, currentDeckId]);
+  }, [modules, currentDeckId, isExternalDeck]);
 
   // Keep ref in sync for Tauri event handlers
   React.useEffect(() => {
@@ -99,7 +107,22 @@ function AudienceView() {
           console.log('[Tauri Audience] Received slide-state:', data);
           setCurrentIndex(data.currentIndex);
           
-          if (data.deckId && data.deckId !== currentDeckIdRef.current) {
+          // Handle external decks - receive slides directly
+          if (data.isExternalDeck && data.externalSlides) {
+            console.log('[Tauri Audience] External deck with', data.externalSlides.length, 'slides');
+            setIsExternalDeck(true);
+            // Convert serialized slides to renderable format (use 'text' type with HTML)
+            const renderableSlides = data.externalSlides.map(slide => ({
+              ...slide,
+              // External MDX slides were converted to HTML, render as text slides
+              type: slide.type === 'mdx' ? 'text' : slide.type,
+              html: slide.html || `<div class="prose prose-invert max-w-4xl mx-auto p-8">${slide.notes || ''}</div>`,
+            }));
+            setSlides(renderableSlides);
+            setTotalSlides(renderableSlides.length);
+            setStatus('');
+          } else if (data.deckId && data.deckId !== currentDeckIdRef.current) {
+            setIsExternalDeck(false);
             setCurrentDeckId(data.deckId);
           }
         });
@@ -141,7 +164,20 @@ function AudienceView() {
       if (event.data?.type === 'SLIDE_STATE') {
         setCurrentIndex(event.data.currentIndex);
         
-        if (event.data.deckId && event.data.deckId !== currentDeckId) {
+        // Handle external decks - receive slides directly
+        if (event.data.isExternalDeck && event.data.externalSlides) {
+          console.log('[Web Audience] External deck with', event.data.externalSlides.length, 'slides');
+          setIsExternalDeck(true);
+          const renderableSlides = event.data.externalSlides.map(slide => ({
+            ...slide,
+            type: slide.type === 'mdx' ? 'text' : slide.type,
+            html: slide.html || `<div class="prose prose-invert max-w-4xl mx-auto p-8">${slide.notes || ''}</div>`,
+          }));
+          setSlides(renderableSlides);
+          setTotalSlides(renderableSlides.length);
+          setStatus('');
+        } else if (event.data.deckId && event.data.deckId !== currentDeckId) {
+          setIsExternalDeck(false);
           setCurrentDeckId(event.data.deckId);
         }
       } else if (event.data?.type === 'SHOW_JOKE') {
@@ -179,6 +215,15 @@ function AudienceView() {
     
     switch (slide.type) {
       case 'text':
+        // Check if html is a string (external deck) or object (bundled deck)
+        if (typeof slide.html === 'string') {
+          return (
+            <div 
+              className="max-w-5xl mx-auto px-8 text-white"
+              dangerouslySetInnerHTML={{ __html: slide.html }}
+            />
+          );
+        }
         return <TextSlide html={slide.html} />;
       case 'image':
         return <ImageSlide src={slide.src} alt={slide.alt} />;

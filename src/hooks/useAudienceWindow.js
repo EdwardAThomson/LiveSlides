@@ -161,6 +161,9 @@ export default function useAudienceWindow({
   const sendStateToAudience = useCallback(async () => {
     const nextSlide = slides[currentIndex + 1] || null;
     
+    // Check if this is an external deck (ID is a UUID)
+    const isExternalDeck = deckId && deckId.includes('-') && deckId.length > 30;
+    
     // Extract only serializable properties (exclude React components)
     const serializeSlide = (slide) => {
       if (!slide) return null;
@@ -191,6 +194,9 @@ export default function useAudienceWindow({
       jokes: jokesConfig?.jokes || [],
       presentationStartTime,
       deckId,
+      // For external decks, send all serialized slides so audience can render them
+      isExternalDeck,
+      externalSlides: isExternalDeck ? slides.map(serializeSlide) : null,
     };
 
     // Avoid sending duplicate state

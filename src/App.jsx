@@ -22,6 +22,8 @@ import demoDeck from './decks/demo-deck';
 import quickDemo from './decks/quick-demo';
 import vibeCoding from './decks/vibe-coding';
 import aiFrameworks from './decks/ai-frameworks';
+import aiofConsultancy from './decks/aiof-consultancy';
+import aiofVisual from './decks/aiof-visual';
 
 // Check if running in Tauri
 const isTauri = () => typeof window !== 'undefined' && window.__TAURI_INTERNALS__;
@@ -59,6 +61,18 @@ const availableDecks = [
     icon: '🤖',
     description: 'AI Opportunity & Risk Management',
   },
+  {
+    id: 'aiof-consultancy',
+    name: 'AI Adoption Framework',
+    icon: '📊',
+    description: 'SME AI Opportunity Discovery',
+  },
+  {
+    id: 'aiof-visual',
+    name: 'AIOF (Visual Version)',
+    icon: '🖼️',
+    description: 'Minimalist pitch deck',
+  },
 ];
 
 function App() {
@@ -70,12 +84,12 @@ function App() {
   const [transitionKind, setTransitionKind] = useState('fade');
   const [transitionKey, setTransitionKey] = useState(0);
   const containerRef = useRef(null);
-  
+
   // External decks from registry (Tauri only)
   const [externalDecks, setExternalDecks] = useState([]);
   const [loadingExternalDeck, setLoadingExternalDeck] = useState(false);
   const [currentExternalDeck, setCurrentExternalDeck] = useState(null); // Currently loaded external deck data
-  
+
   // Track slide position for each deck - this is our source of truth
   const [deckPositions, setDeckPositions] = useState({
     'quick-demo': 0,
@@ -84,11 +98,11 @@ function App() {
     'demo-deck': 0,
     'ai-frameworks': 0,
   });
-  
+
   // Load external deck registry on mount (Tauri only)
   useEffect(() => {
     if (!isTauri()) return;
-    
+
     async function loadExternalDecks() {
       try {
         const registry = await loadRegistry();
@@ -98,20 +112,20 @@ function App() {
         console.error('[App] Failed to load deck registry:', error);
       }
     }
-    
+
     loadExternalDecks();
   }, []);
-  
+
   // Get current index for the active deck
   const currentIndex = deckPositions[currentDeck] || 0;
-  
+
   // Function to update position for current deck
   const setCurrentIndex = (indexOrUpdater) => {
     setDeckPositions(prev => {
-      const newIndex = typeof indexOrUpdater === 'function' 
+      const newIndex = typeof indexOrUpdater === 'function'
         ? indexOrUpdater(prev[currentDeck] || 0)
         : indexOrUpdater;
-      
+
       return {
         ...prev,
         [currentDeck]: newIndex
@@ -123,12 +137,12 @@ function App() {
   const { currentJoke, dismissJoke, preloadedCount, triggerJokeByHotkey } = useJokeManager(jokesConfig || {});
 
   // Audience/Stage window manager
-  const { 
-    isAudienceOpen, 
+  const {
+    isAudienceOpen,
     toggleAudienceWindow,
     presentationStartTime,
     sendJokeToAudience,
-    dismissJokeInAudience 
+    dismissJokeInAudience
   } = useAudienceWindow({
     currentIndex,
     totalSlides: slides.length,
@@ -169,11 +183,11 @@ function App() {
   // Handle adding a new external deck
   const handleAddDeck = useCallback(async () => {
     if (!isTauri()) return;
-    
+
     try {
       const folderPath = await openDeckFolderDialog();
       if (!folderPath) return; // User cancelled
-      
+
       const result = await addDeckToRegistry(folderPath);
       if (result.success) {
         // Reload the registry
@@ -192,27 +206,27 @@ function App() {
   // Handle selecting an external deck
   const handleSelectExternalDeck = useCallback(async (deck) => {
     if (!isTauri()) return;
-    
+
     setLoadingExternalDeck(true);
     try {
       console.log('[App] Loading external deck:', deck.name);
       const deckData = await loadExternalDeck(deck.path);
-      
+
       setCurrentExternalDeck(deckData);
       setSlides(deckData.slides);
       setJokesConfig(deckData.jokes);
       setCameraOverlay(deckData.config.cameraOverlay || null);
       setCurrentDeck(deck.id);
-      
+
       // Initialize position for this deck if not exists
       setDeckPositions(prev => ({
         ...prev,
         [deck.id]: prev[deck.id] || 0,
       }));
-      
+
       // Update last opened timestamp
       await updateDeckLastOpened(deck.id);
-      
+
       console.log('[App] Loaded external deck with', deckData.slides.length, 'slides');
     } catch (error) {
       console.error('[App] Error loading external deck:', error);
@@ -222,78 +236,87 @@ function App() {
     }
   }, []);
 
+  // Theme state
+  const [theme, setTheme] = useState('dark');
+
   // Load the selected deck (bundled decks only - external decks handled by handleSelectExternalDeck)
   useEffect(() => {
     console.log('Loading deck:', currentDeck);
-    console.log('myPresentation:', myPresentation);
-    console.log('demoDeck:', demoDeck);
-    console.log('quickDemo:', quickDemo);
-    
+
     try {
       let loadedSlides;
-      
+      let deckConfig;
+
       switch (currentDeck) {
         case 'my-presentation':
-          console.log('Processing my-presentation');
           loadedSlides = processDeck(myPresentation.config, myPresentation.mdxModules);
           setJokesConfig(myPresentation.jokes);
           setCameraOverlay(myPresentation.config.cameraOverlay);
-          console.log('Loaded slides:', loadedSlides);
-          console.log('Loaded jokes:', myPresentation.jokes);
+          deckConfig = myPresentation.config;
           break;
         case 'vibe-coding':
-          console.log('Processing vibe-coding');
           loadedSlides = processDeck(vibeCoding.config, vibeCoding.mdxModules);
           setJokesConfig(null);
           setCameraOverlay(vibeCoding.config.cameraOverlay);
+          deckConfig = vibeCoding.config;
           break;
         case 'demo-deck':
-          console.log('Processing demo-deck');
           loadedSlides = processDeck(demoDeck.config, demoDeck.mdxModules);
           setJokesConfig(demoDeck.jokes);
           setCameraOverlay(demoDeck.config.cameraOverlay);
-          console.log('Loaded jokes:', demoDeck.jokes);
+          deckConfig = demoDeck.config;
           break;
         case 'quick-demo':
-          console.log('Processing quick-demo');
           loadedSlides = processDeck(quickDemo.config, quickDemo.mdxModules);
-          setJokesConfig(null); // No jokes for quick-demo
+          setJokesConfig(null);
           setCameraOverlay(quickDemo.config.cameraOverlay);
+          deckConfig = quickDemo.config;
           break;
         case 'ai-frameworks':
-          console.log('Processing ai-frameworks');
           loadedSlides = processDeck(aiFrameworks.config, aiFrameworks.mdxModules);
           setJokesConfig(null);
           setCameraOverlay(aiFrameworks.config.cameraOverlay);
+          deckConfig = aiFrameworks.config;
+          break;
+        case 'aiof-consultancy':
+          loadedSlides = processDeck(aiofConsultancy.config, aiofConsultancy.mdxModules);
+          setJokesConfig(null);
+          setCameraOverlay(aiofConsultancy.config.cameraOverlay);
+          deckConfig = aiofConsultancy.config;
+          break;
+        case 'aiof-visual':
+          loadedSlides = processDeck(aiofVisual.config, aiofVisual.mdxModules);
+          setJokesConfig(null);
+          setCameraOverlay(aiofVisual.config.cameraOverlay);
+          deckConfig = aiofVisual.config;
           break;
         default:
-          // Check if this is an external deck - if so, skip this effect
-          // External decks are loaded by handleSelectExternalDeck, not this effect
           if (externalDecks.some(d => d.id === currentDeck)) {
-            console.log('[App] Skipping bundled deck load - this is an external deck:', currentDeck);
             return;
           }
-          // Fall back to quick-demo for unknown decks
-          console.log('[App] Unknown deck, falling back to quick-demo');
           loadedSlides = processDeck(quickDemo.config, quickDemo.mdxModules);
           setJokesConfig(null);
           setCameraOverlay(null);
+          deckConfig = quickDemo.config;
       }
-      
-      console.log('Setting slides:', loadedSlides);
+
       setSlides(loadedSlides);
+      if (deckConfig?.theme) {
+        setTheme(deckConfig.theme);
+      }
     } catch (error) {
       console.error('Failed to load deck:', error);
-      console.error('Error stack:', error.stack);
-      // Show error state
       setSlides([{
         id: 'error',
         type: 'error',
         error: `Failed to load deck: ${error.message}`
       }]);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentDeck]);
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+  };
 
   // Use navigation hook with controlled state
   const {
@@ -303,7 +326,7 @@ function App() {
     canGoNext,
     canGoPrev,
   } = useSlideNavigation(currentIndex, setCurrentIndex, slides.length);
-  
+
   const totalSlides = slides.length;
 
   const handleNext = () => {
@@ -323,23 +346,23 @@ function App() {
   const toggleFullscreen = async () => {
     const el = containerRef.current || document.documentElement;
     if (!document.fullscreenElement) {
-      await el.requestFullscreen().catch(() => {});
+      await el.requestFullscreen().catch(() => { });
     } else {
-      await document.exitFullscreen().catch(() => {});
+      await document.exitFullscreen().catch(() => { });
     }
   };
 
   const toggleTransition = () => {
     const transitions = [
-      'fade', 
-      'slide', 
-      'scale', 
-      'slideUp', 
-      'zoom', 
-      'flip', 
-      'blur', 
-      'rotate', 
-      'bounce', 
+      'fade',
+      'slide',
+      'scale',
+      'slideUp',
+      'zoom',
+      'flip',
+      'blur',
+      'rotate',
+      'bounce',
       'slideDown'
     ];
     setTransitionKind((k) => {
@@ -413,11 +436,18 @@ function App() {
   const currentNotes = currentSlide?.notes || currentSlide?.frontmatter?.notes || '';
 
   return (
-    <div ref={containerRef} className="w-screen h-screen bg-gray-900 text-white flex flex-col overflow-hidden">
+    <div
+      ref={containerRef}
+      className={`w-screen h-screen flex flex-col overflow-hidden transition-colors duration-300 ${theme === 'light' ? 'light-theme' : ''}`}
+      style={{ backgroundColor: 'var(--bg-app)', color: 'var(--text-main)' }}
+    >
       {/* Top bar - Timer, deck selector, slide counter */}
-      <div className="flex items-center justify-between px-4 py-3 bg-gray-800 border-b border-gray-700">
+      <div
+        className="flex items-center justify-between px-4 py-3 border-b transition-colors duration-300"
+        style={{ backgroundColor: 'var(--bg-chrome)', borderColor: 'var(--border-main)' }}
+      >
         <div className="flex items-center gap-4">
-          <DeckSelector 
+          <DeckSelector
             decks={availableDecks}
             currentDeck={currentDeck}
             onSelectDeck={(deckId) => setCurrentDeck(deckId)}
@@ -433,9 +463,17 @@ function App() {
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <button 
+          <button
+            onClick={toggleTheme}
+            className="p-2 rounded hover:bg-white/10 transition-colors text-xl"
+            title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+          >
+            {theme === 'dark' ? '☀️' : '🌙'}
+          </button>
+          <button
             onClick={toggleTransition}
-            className="px-3 py-1 rounded bg-gray-700 hover:bg-gray-600 text-xs transition-colors"
+            className="px-3 py-1 rounded hover:bg-white/10 text-xs transition-colors border"
+            style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-main)' }}
           >
             Transition: <strong>{transitionKind}</strong> ↻
           </button>
@@ -448,8 +486,9 @@ function App() {
         {/* Left panel - Current slide + Notes */}
         <div className="flex-1 flex flex-col p-4 gap-4">
           {/* Current slide preview */}
-          <div 
-            className="flex-1 bg-black rounded-xl overflow-hidden relative cursor-pointer"
+          <div
+            className="flex-1 rounded-xl overflow-hidden relative cursor-pointer shadow-2xl transition-colors duration-300"
+            style={{ backgroundColor: 'var(--bg-slide)' }}
             onClick={handleClick}
           >
             <div className="absolute inset-0 flex items-center justify-center">
@@ -483,22 +522,34 @@ function App() {
           </div>
 
           {/* Notes section */}
-          <div className="h-40 bg-gray-800 rounded-xl p-4 overflow-y-auto">
-            <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-2">
+          <div
+            className="h-40 rounded-xl p-4 overflow-y-auto transition-colors duration-300 border"
+            style={{ backgroundColor: 'var(--bg-chrome)', borderColor: 'var(--border-main)' }}
+          >
+            <h3
+              className="text-sm font-bold uppercase tracking-wide mb-2"
+              style={{ color: 'var(--text-muted)' }}
+            >
               Speaker Notes
             </h3>
             {currentNotes ? (
               <p className="text-lg leading-relaxed whitespace-pre-wrap">{currentNotes}</p>
             ) : (
-              <p className="text-gray-500 italic">No notes for this slide</p>
+              <p style={{ color: 'var(--text-dim)', fontStyle: 'italic' }}>No notes for this slide</p>
             )}
           </div>
         </div>
 
         {/* Right panel - Next slide + Controls */}
-        <div className="w-80 flex flex-col p-4 gap-4 border-l border-gray-700">
+        <div
+          className="w-80 flex flex-col p-4 gap-4 border-l transition-colors duration-300"
+          style={{ backgroundColor: 'var(--bg-app)', borderColor: 'var(--border-main)' }}
+        >
           {/* Next slide preview */}
-          <div className="h-48 bg-black rounded-xl overflow-hidden relative">
+          <div
+            className="h-48 rounded-xl overflow-hidden relative transition-colors duration-300 shadow-md"
+            style={{ backgroundColor: 'var(--bg-slide)' }}
+          >
             {nextSlide ? (
               <>
                 <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
@@ -506,34 +557,48 @@ function App() {
                     {renderSlide(nextSlide)}
                   </div>
                 </div>
-                <div className="absolute top-2 left-2 px-2 py-1 bg-gray-600 rounded text-xs font-semibold">
+                <div
+                  className="absolute top-2 left-2 px-2 py-1 rounded text-xs font-semibold"
+                  style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-main)' }}
+                >
                   NEXT
                 </div>
               </>
             ) : (
-              <div className="absolute inset-0 flex items-center justify-center text-gray-500">
+              <div
+                className="absolute inset-0 flex items-center justify-center"
+                style={{ color: 'var(--text-dim)' }}
+              >
                 End of presentation
               </div>
             )}
           </div>
 
           {/* Navigation controls */}
-          <div className="bg-gray-800 rounded-xl p-4">
-            <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">
+          <div
+            className="rounded-xl p-4 border transition-colors duration-300"
+            style={{ backgroundColor: 'var(--bg-chrome)', borderColor: 'var(--border-main)' }}
+          >
+            <h3
+              className="text-sm font-bold uppercase tracking-wide mb-3"
+              style={{ color: 'var(--text-muted)' }}
+            >
               Navigation
             </h3>
             <div className="flex gap-2">
               <button
                 onClick={handlePrev}
                 disabled={!canGoPrev}
-                className="flex-1 py-3 px-4 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-semibold transition-colors"
+                className="flex-1 py-3 px-4 rounded-lg font-semibold transition-all disabled:opacity-30"
+                style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-main)' }}
               >
                 ← Prev
               </button>
               <button
                 onClick={handleNext}
                 disabled={!canGoNext}
-                className="flex-1 py-3 px-4 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-semibold transition-colors"
+                className="flex-1 py-3 px-4 rounded-lg font-semibold transition-all shadow-lg active:scale-95"
+                style={{ backgroundColor: 'var(--accent-primary)', color: 'white' }}
               >
                 Next →
               </button>
@@ -543,18 +608,23 @@ function App() {
           {/* Stage window toggle */}
           <button
             onClick={toggleAudienceWindow}
-            className={`py-3 px-4 rounded-xl font-semibold transition-colors ${
-              isAudienceOpen 
-                ? 'bg-green-600 hover:bg-green-500' 
-                : 'bg-blue-600 hover:bg-blue-500'
-            }`}
+            className={`py-3 px-4 rounded-xl font-semibold transition-colors ${isAudienceOpen
+              ? 'bg-green-600 hover:bg-green-500'
+              : 'bg-blue-600 hover:bg-blue-500'
+              }`}
           >
             {isAudienceOpen ? '📺 Stage Window Open' : '📺 Open Stage Window (P)'}
           </button>
 
           {/* Joke triggers */}
-          <div className="flex-1 bg-gray-800 rounded-xl p-4 overflow-y-auto">
-            <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3 flex items-center gap-2">
+          <div
+            className="flex-1 rounded-xl p-4 overflow-y-auto border transition-colors duration-300"
+            style={{ backgroundColor: 'var(--bg-chrome)', borderColor: 'var(--border-main)' }}
+          >
+            <h3
+              className="text-sm font-bold uppercase tracking-wide mb-3 flex items-center gap-2"
+              style={{ color: 'var(--text-muted)' }}
+            >
               <span>🎭</span> Joke Panel
             </h3>
             {jokesConfig?.jokes?.length > 0 ? (
@@ -563,7 +633,8 @@ function App() {
                   <button
                     key={joke.id}
                     onClick={() => triggerJokeByHotkey(joke.hotkey)}
-                    className="w-full py-2 px-3 bg-gradient-to-r from-purple-700 to-purple-600 hover:from-purple-600 hover:to-purple-500 rounded-lg text-left flex items-center gap-3 transition-all shadow-md hover:shadow-lg"
+                    className="w-full py-2 px-3 rounded-lg text-left flex items-center gap-3 transition-all shadow-md hover:shadow-lg active:scale-[0.98]"
+                    style={{ backgroundColor: 'var(--accent-primary)', color: 'white' }}
                   >
                     <span className="w-8 h-8 bg-white/20 rounded flex items-center justify-center font-mono font-bold">
                       {joke.hotkey}
@@ -573,7 +644,12 @@ function App() {
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500 text-sm italic">No jokes configured</p>
+              <p
+                className="text-sm italic"
+                style={{ color: 'var(--text-dim)' }}
+              >
+                No jokes configured
+              </p>
             )}
           </div>
         </div>

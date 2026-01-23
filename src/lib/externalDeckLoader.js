@@ -93,7 +93,7 @@ function createSimpleComponent(markdownContent) {
  * Compile MDX content to a React component
  * For external decks, we use simple markdown rendering (no JSX components)
  * @param {string} mdxContent - Raw MDX string
- * @returns {Promise<{Component: Function, frontmatter: object}>}
+ * @returns {Promise<{Component: Function, frontmatter: object, html: string}>}
  */
 async function compileMDX(mdxContent) {
   const { frontmatter, content } = parseFrontmatter(mdxContent);
@@ -102,9 +102,11 @@ async function compileMDX(mdxContent) {
   // Runtime MDX compilation is complex and error-prone
   // This approach supports standard markdown: headers, bold, italic, lists, code
   console.log('[ExternalDeckLoader] Converting markdown to component');
+  const html = markdownToHtml(content);
   const Component = createSimpleComponent(content);
   
-  return { Component, frontmatter };
+  // Return HTML as well so it can be serialized for audience window
+  return { Component, frontmatter, html };
 }
 
 /**
@@ -142,7 +144,7 @@ export async function loadExternalDeck(deckPath) {
         const mdxContent = await readTextFile(mdxPath);
         
         console.log('[ExternalDeckLoader] Compiling MDX:', slideDef.id);
-        const { Component, frontmatter } = await compileMDX(mdxContent);
+        const { Component, frontmatter, html } = await compileMDX(mdxContent);
         
         // Store in mdxModules for compatibility with existing processDeck
         mdxModules[slideDef.id] = {
@@ -157,6 +159,8 @@ export async function loadExternalDeck(deckPath) {
           layout: slideDef.layout || 'center',
           notes: frontmatter.notes || '',
           frontmatter,
+          // Store HTML for serialization to audience window
+          html: `<div class="prose prose-invert max-w-4xl mx-auto p-8">${html}</div>`,
         });
       } catch (error) {
         console.error('[ExternalDeckLoader] Error loading slide:', slideDef.id, error);

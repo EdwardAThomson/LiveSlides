@@ -1,13 +1,21 @@
 export default function Block({ variant = 'default', children }) {
   const variants = {
-    default: 'bg-transparent',
-    primary: 'bg-blue-500/10 border border-blue-500/30 rounded-lg p-6',
-    secondary: 'bg-gray-500/10 border border-gray-500/30 rounded-lg p-6',
-    accent: 'bg-purple-500/10 border border-purple-500/30 rounded-lg p-6',
+    default: { bg: 'transparent', border: 'transparent' },
+    primary: { bg: 'var(--bg-block-primary)', border: 'var(--border-block-primary)' },
+    secondary: { bg: 'var(--bg-block-secondary)', border: 'var(--border-block-secondary)' },
+    accent: { bg: 'var(--bg-block-accent)', border: 'var(--border-block-accent)' },
   };
 
+  const style = variants[variant] || variants.default;
+
   return (
-    <div className={`${variants[variant] || variants.default}`}>
+    <div
+      className="rounded-lg p-6 border transition-colors duration-300"
+      style={{
+        backgroundColor: style.bg,
+        borderColor: style.border
+      }}
+    >
       {children}
     </div>
   );

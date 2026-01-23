@@ -29,11 +29,11 @@ const itemVariants = {
 // Error boundary wrapper for MDX components
 function SafeComponent({ Component, components }) {
   const [error, setError] = useState(null);
-  
+
   useEffect(() => {
     setError(null); // Reset error when component changes
   }, [Component]);
-  
+
   if (error) {
     return (
       <div className="text-red-400 text-center p-8">
@@ -42,7 +42,7 @@ function SafeComponent({ Component, components }) {
       </div>
     );
   }
-  
+
   try {
     return <Component components={components} />;
   } catch (err) {
@@ -72,8 +72,9 @@ export default function MDXSlide({ Component, layout = 'center' }) {
 
   return (
     <SlideLayout layout={layout}>
-      <motion.div 
-        className="w-full text-white"
+      <motion.div
+        className="w-full"
+        style={{ color: 'var(--text-main)' }}
         variants={containerVariants}
         initial="hidden"
         animate="visible"
