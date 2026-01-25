@@ -6,15 +6,15 @@
  */
 export function processDeck(config, mdxModules = {}) {
   console.log('processDeck called with:', { config, mdxModules });
-  
+
   const slides = config.slides.map((slideDef) => {
     console.log('Processing slide:', slideDef);
-    
+
     // If it's an MDX slide, use the pre-imported module
     if (slideDef.src && slideDef.src.endsWith('.mdx')) {
       const mdxModule = mdxModules[slideDef.id];
       console.log(`Looking for MDX module with id "${slideDef.id}":`, mdxModule);
-      
+
       if (!mdxModule) {
         console.error(`MDX module not found for slide: ${slideDef.id}`);
         console.error('Available modules:', Object.keys(mdxModules));
@@ -25,9 +25,8 @@ export function processDeck(config, mdxModules = {}) {
         };
       }
 
-      console.log('MDX module found:', mdxModule);
-      console.log('MDX module.default:', mdxModule.default);
-      
+      console.log('MDX module found for slide:', slideDef.id);
+
       // MDX modules can export as default OR as the module itself
       const Component = mdxModule.default || mdxModule;
 
@@ -62,7 +61,7 @@ export function resolveAssetPath(deckPath, assetPath) {
   if (assetPath.startsWith('http://') || assetPath.startsWith('https://')) {
     return assetPath;
   }
-  
+
   // Remove leading ./ if present
   const cleanPath = assetPath.replace(/^\.\//, '');
   return `${deckPath}/${cleanPath}`;
