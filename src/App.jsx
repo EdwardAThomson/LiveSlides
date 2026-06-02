@@ -2,11 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import SlideChrome from './components/SlideChrome';
 import Transition from './components/Transition';
-import TextSlide from './components/slides/TextSlide';
-import ImageSlide from './components/slides/ImageSlide';
-import YouTubeSlide from './components/slides/YouTubeSlide';
-import IframeSlide from './components/slides/IframeSlide';
-import MDXSlide from './components/slides/MDXSlide';
+import Slide from './components/slides/Slide';
 import JokeOverlay from './components/JokeOverlay';
 import DeckSelector from './components/DeckSelector';
 import useSlideNavigation from './hooks/useSlideNavigation';
@@ -15,65 +11,12 @@ import useJokeManager from './hooks/useJokeManager';
 import useAudienceWindow from './hooks/useAudienceWindow';
 import PresenterTimer from './components/PresenterTimer';
 import { processDeck } from './lib/deckLoader';
-import { loadRegistry, addDeckToRegistry, openDeckFolderDialog, updateDeckLastOpened } from './lib/deckRegistry';
+import { loadRegistry, addDeckToRegistry, openDeckFolderDialog, updateDeckLastOpened } from './lib/externalDeckRegistry';
 import { loadExternalDeck } from './lib/externalDeckLoader';
-import myPresentation from './decks/my-presentation';
-import demoDeck from './decks/demo-deck';
-import quickDemo from './decks/quick-demo';
-import vibeCoding from './decks/vibe-coding';
-import aiFrameworks from './decks/ai-frameworks';
-import aiofConsultancy from './decks/aiof-consultancy';
-import aiofVisual from './decks/aiof-visual';
+import { availableDecks, loadDeck, isBundledDeck } from './decks/registry';
 
 // Check if running in Tauri
 const isTauri = () => typeof window !== 'undefined' && window.__TAURI_INTERNALS__;
-
-
-// Available decks configuration
-const availableDecks = [
-  {
-    id: 'quick-demo',
-    name: 'Quick Demo',
-    icon: '⚡',
-    description: 'Fast overview of features',
-  },
-  {
-    id: 'vibe-coding',
-    name: 'Vibe Coding Process',
-    icon: '🤖',
-    description: 'AI-assisted development workflow',
-  },
-  {
-    id: 'my-presentation',
-    name: 'My Presentation',
-    icon: '📝',
-    description: 'Custom presentation deck',
-  },
-  {
-    id: 'demo-deck',
-    name: 'MDX Examples',
-    icon: '🎨',
-    description: 'MDX components showcase',
-  },
-  {
-    id: 'ai-frameworks',
-    name: 'AI Frameworks',
-    icon: '🤖',
-    description: 'AI Opportunity & Risk Management',
-  },
-  {
-    id: 'aiof-consultancy',
-    name: 'AI Adoption Framework',
-    icon: '📊',
-    description: 'SME AI Opportunity Discovery',
-  },
-  {
-    id: 'aiof-visual',
-    name: 'AIOF (Visual Version)',
-    icon: '🖼️',
-    description: 'Minimalist pitch deck',
-  },
-];
 
 function App() {
   const [currentDeck, setCurrentDeck] = useState('quick-demo'); // Start with quick-demo
@@ -91,14 +34,9 @@ function App() {
   const [loadingExternalDeck, setLoadingExternalDeck] = useState(false);
   const [currentExternalDeck, setCurrentExternalDeck] = useState(null); // Currently loaded external deck data
 
-  // Track slide position for each deck - this is our source of truth
-  const [deckPositions, setDeckPositions] = useState({
-    'quick-demo': 0,
-    'vibe-coding': 0,
-    'my-presentation': 0,
-    'demo-deck': 0,
-    'ai-frameworks': 0,
-  });
+  // Track slide position for each deck - this is our source of truth.
+  // Populated lazily; any deck not yet present defaults to index 0.
+  const [deckPositions, setDeckPositions] = useState({});
 
   // Load external deck registry on mount (Tauri only)
   useEffect(() => {
@@ -134,6 +72,35 @@ function App() {
     });
   };
 
+  const totalSlides = slides.length;
+
+  // Navigation logic (single source of truth, shared with keyboard, clicks,
+  // on-screen controls and the audience window).
+  const { next, prev, goTo, canGoNext, canGoPrev } = useSlideNavigation(
+    currentIndex,
+    setCurrentIndex,
+    totalSlides
+  );
+
+  const handleNext = () => {
+    if (canGoNext) {
+      next();
+      setTransitionKey((k) => k + 1);
+    }
+  };
+
+  const handlePrev = () => {
+    if (canGoPrev) {
+      prev();
+      setTransitionKey((k) => k + 1);
+    }
+  };
+
+  const handleGoTo = (index) => {
+    goTo(index);
+    setTransitionKey((k) => k + 1);
+  };
+
   // Joke manager (only if jokes config exists)
   const { currentJoke, dismissJoke, preloadedCount, triggerJokeByHotkey } = useJokeManager(jokesConfig || {});
 
@@ -153,24 +120,9 @@ function App() {
     deckId: currentDeck,
     cameraOverlayVisible,
     theme,
-    onNext: () => {
-      if (currentIndex < slides.length - 1) {
-        setCurrentIndex(prev => prev + 1);
-        setTransitionKey(k => k + 1);
-      }
-    },
-    onPrev: () => {
-      if (currentIndex > 0) {
-        setCurrentIndex(prev => prev - 1);
-        setTransitionKey(k => k + 1);
-      }
-    },
-    onGoTo: (index) => {
-      if (index >= 0 && index < slides.length) {
-        setCurrentIndex(index);
-        setTransitionKey(k => k + 1);
-      }
-    },
+    onNext: handleNext,
+    onPrev: handlePrev,
+    onGoTo: handleGoTo,
     onTriggerJoke: triggerJokeByHotkey,
   });
 
@@ -239,108 +191,39 @@ function App() {
     }
   }, []);
 
-  // Load the selected deck (bundled decks only - external decks handled by handleSelectExternalDeck)
+  // Load the selected deck (bundled decks only - external decks are loaded by
+  // handleSelectExternalDeck and pushed straight into state).
   useEffect(() => {
-    console.log('Loading deck:', currentDeck);
+    if (!isBundledDeck(currentDeck)) return;
 
-    try {
-      let loadedSlides;
-      let deckConfig;
+    let cancelled = false;
 
-      switch (currentDeck) {
-        case 'my-presentation':
-          loadedSlides = processDeck(myPresentation.config, myPresentation.mdxModules);
-          setJokesConfig(myPresentation.jokes);
-          setCameraOverlay(myPresentation.config.cameraOverlay);
-          deckConfig = myPresentation.config;
-          break;
-        case 'vibe-coding':
-          loadedSlides = processDeck(vibeCoding.config, vibeCoding.mdxModules);
-          setJokesConfig(null);
-          setCameraOverlay(vibeCoding.config.cameraOverlay);
-          deckConfig = vibeCoding.config;
-          break;
-        case 'demo-deck':
-          loadedSlides = processDeck(demoDeck.config, demoDeck.mdxModules);
-          setJokesConfig(demoDeck.jokes);
-          setCameraOverlay(demoDeck.config.cameraOverlay);
-          deckConfig = demoDeck.config;
-          break;
-        case 'quick-demo':
-          loadedSlides = processDeck(quickDemo.config, quickDemo.mdxModules);
-          setJokesConfig(null);
-          setCameraOverlay(quickDemo.config.cameraOverlay);
-          deckConfig = quickDemo.config;
-          break;
-        case 'ai-frameworks':
-          loadedSlides = processDeck(aiFrameworks.config, aiFrameworks.mdxModules);
-          setJokesConfig(null);
-          setCameraOverlay(aiFrameworks.config.cameraOverlay);
-          deckConfig = aiFrameworks.config;
-          break;
-        case 'aiof-consultancy':
-          loadedSlides = processDeck(aiofConsultancy.config, aiofConsultancy.mdxModules);
-          setJokesConfig(null);
-          setCameraOverlay(aiofConsultancy.config.cameraOverlay);
-          deckConfig = aiofConsultancy.config;
-          break;
-        case 'aiof-visual':
-          loadedSlides = processDeck(aiofVisual.config, aiofVisual.mdxModules);
-          setJokesConfig(null);
-          setCameraOverlay(aiofVisual.config.cameraOverlay);
-          deckConfig = aiofVisual.config;
-          break;
-        default:
-          if (externalDecks.some(d => d.id === currentDeck)) {
-            return;
-          }
-          loadedSlides = processDeck(quickDemo.config, quickDemo.mdxModules);
-          setJokesConfig(null);
-          setCameraOverlay(null);
-          deckConfig = quickDemo.config;
+    (async () => {
+      try {
+        const deck = await loadDeck(currentDeck);
+        if (cancelled) return;
+
+        setSlides(processDeck(deck.config, deck.mdxModules));
+        setJokesConfig(deck.jokes ?? null);
+        setCameraOverlay(deck.config.cameraOverlay ?? null);
+        if (deck.config?.theme) {
+          setTheme(deck.config.theme);
+        }
+      } catch (error) {
+        if (cancelled) return;
+        console.error('Failed to load deck:', error);
+        setSlides([{
+          id: 'error',
+          type: 'error',
+          error: `Failed to load deck: ${error.message}`,
+        }]);
       }
+    })();
 
-      setSlides(loadedSlides);
-      if (deckConfig?.theme) {
-        setTheme(deckConfig.theme);
-      }
-    } catch (error) {
-      console.error('Failed to load deck:', error);
-      setSlides([{
-        id: 'error',
-        type: 'error',
-        error: `Failed to load deck: ${error.message}`
-      }]);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => { cancelled = true; };
   }, [currentDeck]);
   const toggleTheme = () => {
     setTheme(prev => prev === 'dark' ? 'light' : 'dark');
-  };
-
-  // Use navigation hook with controlled state
-  const {
-    next,
-    prev,
-    goTo,
-    canGoNext,
-    canGoPrev,
-  } = useSlideNavigation(currentIndex, setCurrentIndex, slides.length);
-
-  const totalSlides = slides.length;
-
-  const handleNext = () => {
-    if (canGoNext) {
-      next();
-      setTransitionKey((k) => k + 1);
-    }
-  };
-
-  const handlePrev = () => {
-    if (canGoPrev) {
-      prev();
-      setTransitionKey((k) => k + 1);
-    }
   };
 
   const toggleFullscreen = async () => {
@@ -398,30 +281,6 @@ function App() {
       </div>
     );
   }
-
-  const renderSlide = (slide) => {
-    switch (slide.type) {
-      case 'text':
-        return <TextSlide html={slide.html} />;
-      case 'image':
-        return <ImageSlide src={slide.src} alt={slide.alt} />;
-      case 'youtube':
-        return <YouTubeSlide youtubeId={slide.youtubeId} start={slide.start} />;
-      case 'iframe':
-        return <IframeSlide src={slide.src} />;
-      case 'mdx':
-        return <MDXSlide Component={slide.Component} layout={slide.layout} />;
-      case 'error':
-        return (
-          <div className="text-red-500 max-w-2xl mx-auto p-8">
-            <h2 className="text-3xl font-bold mb-4">Error Loading Slide</h2>
-            <p>{slide.error}</p>
-          </div>
-        );
-      default:
-        return <div className="text-red-500">Unknown slide type: {slide.type}</div>;
-    }
-  };
 
   const handleClick = (e) => {
     // Click-to-advance unless clicking interactive elements
@@ -509,7 +368,7 @@ function App() {
                   >
                     <AnimatePresence mode="wait">
                       <Transition key={`${currentSlide.id}-${transitionKey}`} kind={transitionKind} active>
-                        {renderSlide(currentSlide)}
+                        <Slide slide={currentSlide} />
                       </Transition>
                     </AnimatePresence>
                   </SlideChrome>
@@ -554,7 +413,7 @@ function App() {
               <>
                 <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
                   <div className="w-[250%] h-[250%] flex items-center justify-center" style={{ transform: 'scale(0.4)' }}>
-                    {renderSlide(nextSlide)}
+                    <Slide slide={nextSlide} />
                   </div>
                 </div>
                 <div

@@ -26,5 +26,8 @@ dist-ssr
 # Temporary files
 temp
 tmp/
-src/decks
+
+# Deck content is local-only, but the bundled-deck registry is tracked.
+src/decks/*
+!src/decks/registry.js
 public/decks
