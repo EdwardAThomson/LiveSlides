@@ -6,16 +6,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 npm install            # Install JS dependencies
-npm run dev            # Vite dev server (http://localhost:5173) — web mode
+npm run dev            # Vite dev server (http://localhost:5183, strictPort) — web mode
 npm run build          # Production build to dist/ (multi-page: index.html + audience.html)
 npm run lint           # ESLint over the repo
 npm run preview        # Preview the production build
 
-npm run tauri:dev      # Run the desktop app (starts Vite automatically, then Tauri/Rust)
+npm run tauri:dev      # Run the desktop app — preferred way to launch it
 npm run tauri:build    # Build the native desktop bundle
 ```
 
 There is **no test framework**. `test-mdx.js` is a standalone script used to verify the shape of a compiled MDX module (default export + `frontmatter`); it is not run by any harness. Tauri builds require Rust (`rustup`) and platform WebKit/GTK dev packages — see README for the Linux/macOS/Windows prerequisites.
+
+**Launching the desktop app:** prefer `npm run tauri:dev` — it starts Vite itself (via `beforeDevCommand`), waits for it, then compiles the Rust backend and opens the window. Do **not** have a Vite dev server already running, since the dev port is pinned (`vite.config.js` → `server: { port: 5183, strictPort: true }`, matched by `devUrl` in `src-tauri/tauri.conf.json`); a second `npm run dev` would fail on the busy port. The strict, fixed port exists so the Tauri window always loads *this* app rather than whatever else happens to be on the default Vite port. `cd src-tauri && cargo run` also works but does **not** auto-start Vite, so Vite must already be running. The first Rust compile is slow (one-time); afterward only `src-tauri/` changes recompile — frontend edits hot-reload with no Rust rebuild.
 
 ## Architecture
 

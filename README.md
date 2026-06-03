@@ -173,19 +173,30 @@ LiveSlides can run as a native desktop application with enhanced multi-window su
 
 ### Running the Desktop App
 
-**Option 1: Two terminals (recommended for development)**
-```bash
-# Terminal 1 - Vite dev server
-npm run dev
-
-# Terminal 2 - Tauri app
-cd src-tauri && cargo run
-```
-
-**Option 2: Combined command**
+**Recommended: one command**
 ```bash
 npm run tauri:dev
 ```
+This starts the Vite dev server for you (via `beforeDevCommand`), waits for it,
+then compiles the Rust backend and launches the window. Don't have a Vite dev
+server already running when you use this — the dev port is pinned with
+`strictPort`, so a second `npm run dev` would fail on the busy port.
+
+The first launch compiles all of Tauri's Rust dependencies (a minute or two,
+one-time). After that, compiles are incremental: editing React/MDX is hot-
+reloaded live with no Rust rebuild, and only changes to `src-tauri/` trigger a
+(fast) recompile.
+
+**Alternative: two terminals**
+```bash
+# Terminal 1 - Vite dev server (must be running first)
+npm run dev
+
+# Terminal 2 - Tauri app (cargo run does NOT auto-start Vite)
+cd src-tauri && cargo run
+```
+Use this if you want to drive the Rust build directly. Vite must already be
+running, or the window opens to a connection error.
 
 ### Building for Production
 ```bash
