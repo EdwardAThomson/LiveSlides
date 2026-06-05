@@ -1,6 +1,6 @@
 # Roadmap — LiveSlides
 
-_Status: active · updated 2026-06-03_
+_Status: active · updated 2026-06-05_
 
 > Code-first presentation app: author slides in Markdown/MDX with React components, embed live web apps / video / rich media, trigger hotkey "joke" overlays, and ship as a web app or native desktop app (Tauri) with a presenter view.
 >
@@ -57,7 +57,7 @@ _Status: active · updated 2026-06-03_
 - [x] Capabilities configured for permissions
 - [x] Stage view with navigation controls
 - [x] Camera overlay toggle in Stage view
-- [ ] File dialog for opening deck folders
+- [x] File dialog for opening deck folders (opens at `~/Documents/LiveSlides`)
 - [ ] Global hotkeys (opt-in, system-wide)
 - [ ] Production builds (macOS / Windows / Linux)
 - [ ] App icons and installers
@@ -109,6 +109,31 @@ External decks use regex markdown→HTML (no MDX primitives), and `AudienceView.
 - [ ] Replace ~80 `console.log`/`error` calls (24 in `deckRegistry.js` alone) with a `debug()` helper gated on a flag, or strip
 - [ ] Remove/relocate stray root files: `app-example.jsx`, `test-mdx.js`, and the `temp/` folder (source `.md` decks + `AIOF_presentation/`)
 - [ ] Replace the `try/catch` + `setTimeout(setError)` workaround in `MDXSlide.jsx` with a proper `SlideErrorBoundary` class component
+
+## Phase 6 — Presenter Preview, Camera Overlay & Stage Reliability (shipped 2026-06-05, PR #1)
+
+> WYSIWYG presenter preview and runtime-configurable camera overlay, plus the Stage-window and dev-tooling fixes found along the way.
+
+### WYSIWYG slide canvas
+- [x] Fixed 1280×720 slide canvas scaled uniformly to fit each view (`SlideStage`) — presenter preview is now a faithful WYSIWYG of the Stage window (fixes mis-proportioned content/overlay between the two)
+- [x] `SlideChrome` switched to `h-full`; Stage window defaults to 16:9 (1280×720); `#audience-root` sized
+- [x] Boundary ring marks the slide edge in the presenter preview (preview-only; Stage output stays clean)
+
+### Camera overlay settings
+- [x] ⚙️ settings drawer — position, width/height (with aspect-ratio lock), margin, gradient, border
+- [x] Live edits propagate to preview **and** Stage (overlay config now sent in the slide-state payload + dedupe key)
+- [x] Hybrid persistence — per-deck override in `localStorage` (deck.json stays the default); in Tauri an external deck can bake settings into its `deck.json` (`saveOverlayToDeckFile`)
+- [x] Border option keeps the camera region visible when the gradient fill is off; shared `DEFAULT_OVERLAY`; `CameraOverlay` respects `enabled: false`
+
+### Fixes & tooling
+- [x] Stage-window sync: resend slide state on `audience-ready` (fixes blank/delayed Stage from emitting before the audience was listening)
+- [x] Dev server pinned to port 5183 with `strictPort` so `tauri dev` always loads this app
+- [x] Docs: recommend `npm run tauri:dev`; document the dev-port pinning
+
+### Follow-ups
+- [ ] Track the Stage window's live size so the preview matches a non-16:9 / resized Stage exactly (currently fixed 16:9)
+- [ ] Give the "NEXT" preview thumbnail the same 16:9 canvas treatment
+- [ ] Manually verify in the packaged Tauri build: Stage sync on open, live overlay edits, "Save to deck file" on an external deck
 
 ## Testing & QA
 - [ ] All slide types render correctly
