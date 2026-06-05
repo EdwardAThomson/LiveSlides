@@ -34,6 +34,9 @@ export default function useAudienceWindow({
   const [isAudienceOpen, setIsAudienceOpen] = useState(false);
   const [presentationStartTime, setPresentationStartTime] = useState(null);
   const [tauriWindow, setTauriWindow] = useState(null);
+  // Bumped whenever the audience signals it's ready; drives a re-send of the
+  // current state once the audience is actually listening (see send effect).
+  const [audienceReadyTick, setAudienceReadyTick] = useState(0);
   const lastSentState = useRef(null);
   const tauriUnlisten = useRef(null);
 
@@ -92,6 +95,7 @@ export default function useAudienceWindow({
         tauriUnlisten.current = await listen('audience-ready', () => {
           console.log('[Tauri] Audience window ready, sending state...');
           lastSentState.current = null; // Force re-send
+          setAudienceReadyTick((t) => t + 1);
         });
 
       } catch (e) {
@@ -242,7 +246,7 @@ export default function useAudienceWindow({
           // Audience window is ready, send initial state
           console.log('[Presenter] Received AUDIENCE_READY, sending state...');
           lastSentState.current = null; // Clear cache to force re-send
-          sendStateToAudience();
+          setAudienceReadyTick((t) => t + 1);
           break;
         case 'TRIGGER_JOKE':
           onTriggerJoke?.(event.data.hotkey);
@@ -254,12 +258,15 @@ export default function useAudienceWindow({
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [onTriggerJoke, sendStateToAudience]);
+  }, [onTriggerJoke]);
 
-  // Send state updates to audience window
+  // Send state updates to the audience window. Runs on every state change, and
+  // again on each audienceReadyTick — the latter resends once the audience has
+  // registered its listeners, fixing the race where the first emit is lost
+  // because the audience webview wasn't listening yet.
   useEffect(() => {
     sendStateToAudience();
-  }, [sendStateToAudience]);
+  }, [sendStateToAudience, audienceReadyTick]);
 
   // Check if audience window was closed
   useEffect(() => {
