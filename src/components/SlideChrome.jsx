@@ -13,16 +13,26 @@ export default function SlideChrome({
   cameraOverlay,
   cameraOverlayVisible,
   hideControls = false,
+  showBoundary = false,
 }) {
   return (
     <div
-      className="w-full h-screen overflow-hidden relative transition-colors duration-300"
+      className="w-full h-full overflow-hidden relative transition-colors duration-300"
       style={{ backgroundColor: 'var(--bg-slide)', color: 'var(--text-main)' }}
     >
       {/* Main slide content area */}
       <div className="absolute inset-0 flex items-center justify-center select-none">
         {children}
       </div>
+
+      {/* Optional boundary marker — traces the actual slide edges. Only used in
+          the presenter preview (showBoundary); the Stage output stays clean. */}
+      {showBoundary && (
+        <div
+          className="absolute inset-0 pointer-events-none border-2 z-40"
+          style={{ borderColor: 'var(--accent-primary)' }}
+        />
+      )}
 
       {/* Bottom controls */}
       {!hideControls && (

@@ -11,23 +11,11 @@
  * - Rounded corners to match typical camera feeds
  */
 
-// Default camera overlay configuration
-const DEFAULT_CONFIG = {
-  enabled: true,
-  position: 'bottom-left',
-  width: '420px',
-  height: '240px',
-  borderRadius: '12px',
-  gradient: true,
-  gradientColors: ['#8b5cf6', '#ec4899', '#f59e0b'], // purple -> pink -> amber
-  backgroundColor: '#000000',
-  opacity: 1,
-  margin: '0px',
-};
+import { DEFAULT_OVERLAY as DEFAULT_CONFIG } from '../lib/overlaySettings';
 
 export default function CameraOverlay({ config, visible = true }) {
-  // Return null if not visible
-  if (!visible) {
+  // Hidden via the C toggle, or explicitly disabled in the config.
+  if (!visible || config?.enabled === false) {
     return null;
   }
 
@@ -44,6 +32,9 @@ export default function CameraOverlay({ config, visible = true }) {
     backgroundColor = '#000000',
     opacity = 1,
     margin = '0px',
+    border = false,
+    borderColor = 'rgba(255, 255, 255, 0.7)',
+    borderWidth = '3px',
   } = effectiveConfig;
 
   // Position styles based on config
@@ -78,10 +69,17 @@ export default function CameraOverlay({ config, visible = true }) {
     ...positionStyles[position],
   };
 
-  // Add gradient fill if enabled
+  // Add gradient fill if enabled (otherwise the solid backgroundColor masks the
+  // region — black on a dark slide reads as invisible, which is why a border is
+  // useful to keep the camera region marked).
   if (gradient) {
     const gradientString = gradientColors.join(', ');
     style.background = `linear-gradient(135deg, ${gradientString})`;
+  }
+
+  // Optional outline — keeps the camera region visible regardless of fill.
+  if (border) {
+    style.border = `${borderWidth} solid ${borderColor}`;
   }
 
   return <div style={style} />;

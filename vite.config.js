@@ -26,4 +26,11 @@ export default defineConfig({
       },
     },
   },
+  // Dedicated, fixed dev port so Tauri's devUrl always points at *this* app.
+  // strictPort makes Vite fail loudly if 1420 is taken rather than silently
+  // falling back to another port (which would load the wrong app in Tauri).
+  server: {
+    port: 5183,
+    strictPort: true,
+  },
 })

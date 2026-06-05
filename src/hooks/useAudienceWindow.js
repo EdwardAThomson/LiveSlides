@@ -23,6 +23,7 @@ export default function useAudienceWindow({
   slides,
   jokesConfig,
   deckId,
+  cameraOverlay,
   cameraOverlayVisible,
   theme,
   onNext,
@@ -34,6 +35,9 @@ export default function useAudienceWindow({
   const [isAudienceOpen, setIsAudienceOpen] = useState(false);
   const [presentationStartTime, setPresentationStartTime] = useState(null);
   const [tauriWindow, setTauriWindow] = useState(null);
+  // Bumped whenever the audience signals it's ready; drives a re-send of the
+  // current state once the audience is actually listening (see send effect).
+  const [audienceReadyTick, setAudienceReadyTick] = useState(0);
   const lastSentState = useRef(null);
   const tauriUnlisten = useRef(null);
 
@@ -62,8 +66,8 @@ export default function useAudienceWindow({
         const webview = new WebviewWindow('audience', {
           url: '/audience.html',
           title: 'LiveSlides - Stage View',
-          width: 1200,
-          height: 800,
+          width: 1280,
+          height: 720, // 16:9, matches the presenter preview canvas
           resizable: true,
         });
 
@@ -92,6 +96,7 @@ export default function useAudienceWindow({
         tauriUnlisten.current = await listen('audience-ready', () => {
           console.log('[Tauri] Audience window ready, sending state...');
           lastSentState.current = null; // Force re-send
+          setAudienceReadyTick((t) => t + 1);
         });
 
       } catch (e) {
@@ -106,8 +111,8 @@ export default function useAudienceWindow({
       return;
     }
 
-    const width = 1200;
-    const height = 800;
+    const width = 1280;
+    const height = 720; // 16:9, matches the presenter preview canvas
     const left = window.screen.width - width - 50;
     const top = 50;
 
@@ -196,6 +201,7 @@ export default function useAudienceWindow({
       jokes: jokesConfig?.jokes || [],
       presentationStartTime,
       deckId,
+      cameraOverlay,
       cameraOverlayVisible,
       theme,
       // For external decks, send all serialized slides so audience can render them
@@ -204,7 +210,7 @@ export default function useAudienceWindow({
     };
 
     // Avoid sending duplicate state
-    const stateKey = JSON.stringify({ currentIndex, totalSlides, deckId, cameraOverlayVisible, theme });
+    const stateKey = JSON.stringify({ currentIndex, totalSlides, deckId, cameraOverlay, cameraOverlayVisible, theme });
     if (lastSentState.current === stateKey) return;
     lastSentState.current = stateKey;
 
@@ -228,7 +234,7 @@ export default function useAudienceWindow({
     } catch (e) {
       console.error('[Presenter] Failed to send state to audience window:', e);
     }
-  }, [audienceWindow, isAudienceOpen, currentIndex, totalSlides, currentSlide, slides, jokesConfig, presentationStartTime, deckId, cameraOverlayVisible, theme]);
+  }, [audienceWindow, isAudienceOpen, currentIndex, totalSlides, currentSlide, slides, jokesConfig, presentationStartTime, deckId, cameraOverlay, cameraOverlayVisible, theme]);
 
   // Handle messages from audience window
   useEffect(() => {
@@ -242,7 +248,7 @@ export default function useAudienceWindow({
           // Audience window is ready, send initial state
           console.log('[Presenter] Received AUDIENCE_READY, sending state...');
           lastSentState.current = null; // Clear cache to force re-send
-          sendStateToAudience();
+          setAudienceReadyTick((t) => t + 1);
           break;
         case 'TRIGGER_JOKE':
           onTriggerJoke?.(event.data.hotkey);
@@ -254,12 +260,15 @@ export default function useAudienceWindow({
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [onTriggerJoke, sendStateToAudience]);
+  }, [onTriggerJoke]);
 
-  // Send state updates to audience window
+  // Send state updates to the audience window. Runs on every state change, and
+  // again on each audienceReadyTick — the latter resends once the audience has
+  // registered its listeners, fixing the race where the first emit is lost
+  // because the audience webview wasn't listening yet.
   useEffect(() => {
     sendStateToAudience();
-  }, [sendStateToAudience]);
+  }, [sendStateToAudience, audienceReadyTick]);
 
   // Check if audience window was closed
   useEffect(() => {

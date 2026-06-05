@@ -1,6 +1,10 @@
 import React from 'react';
 import JokeOverlay from './JokeOverlay';
 import SlideChrome from './SlideChrome';
+import SlideStage from './SlideStage';
+import Slide from './slides/Slide';
+import { processDeck } from '../lib/deckLoader';
+import { loadDeck } from '../decks/registry';
 
 // Check if running in Tauri
 const isTauri = () => typeof window !== 'undefined' && window.__TAURI_INTERNALS__;
@@ -11,7 +15,6 @@ export default function AudienceView() {
     const [status, setStatus] = React.useState('Waiting for presenter...');
     const [slides, setSlides] = React.useState([]);
     const [loadError, setLoadError] = React.useState(null);
-    const [modules, setModules] = React.useState(null);
     const [currentDeckId, setCurrentDeckId] = React.useState(null);
     const [currentJoke, setCurrentJoke] = React.useState(null);
     const [cameraOverlayVisible, setCameraOverlayVisible] = React.useState(true);
@@ -20,68 +23,41 @@ export default function AudienceView() {
     const [theme, setTheme] = React.useState('dark');
     const currentDeckIdRef = React.useRef(null);
 
-    // Load base modules on mount
-    React.useEffect(() => {
-        async function loadModules() {
-            try {
-                setStatus('Loading...');
-                const [ts, is, ys, ifs, ms, dl] = await Promise.all([
-                    import('./slides/TextSlide'),
-                    import('./slides/ImageSlide'),
-                    import('./slides/YouTubeSlide'),
-                    import('./slides/IframeSlide'),
-                    import('./slides/MDXSlide'),
-                    import('../lib/deckLoader'),
-                ]);
-                setModules({
-                    TextSlide: ts.default,
-                    ImageSlide: is.default,
-                    YouTubeSlide: ys.default,
-                    IframeSlide: ifs.default,
-                    MDXSlide: ms.default,
-                    processDeck: dl.processDeck,
-                });
-                setStatus('Waiting for presenter...');
-            } catch (err) {
-                console.error('[Audience] Module import error:', err);
-                setLoadError(`Import error: ${err.message}`);
-                setStatus('Failed to load');
-            }
-        }
-        loadModules();
-    }, []);
-
     // Track if current deck is external (loaded via externalSlides)
     const [isExternalDeck, setIsExternalDeck] = React.useState(false);
 
     // Load deck when deckId changes (bundled decks only)
     React.useEffect(() => {
-        if (!modules || !currentDeckId) return;
+        if (!currentDeckId) return;
         // Skip loading if this is an external deck - slides come via message
         if (isExternalDeck) {
             console.log('[Audience] Skipping deck load - external deck');
             return;
         }
 
-        async function loadDeck() {
+        let cancelled = false;
+
+        (async () => {
             try {
-                setStatus(`Loading deck...`);
-                const deckModule = await import(`../decks/${currentDeckId}/index.js`);
-                const deck = deckModule.default;
-                const loadedSlides = modules.processDeck(deck.config, deck.mdxModules);
+                setStatus('Loading deck...');
+                const deck = await loadDeck(currentDeckId);
+                if (cancelled) return;
+                const loadedSlides = processDeck(deck.config, deck.mdxModules);
                 setSlides(loadedSlides);
                 setTotalSlides(loadedSlides.length);
                 setCameraOverlay(deck.config.cameraOverlay || null);
                 setStatus('');
                 setLoadError(null);
             } catch (err) {
+                if (cancelled) return;
                 console.error('[Audience] Deck load error:', err);
                 setLoadError(`Deck error: ${err.message}`);
                 setStatus('Failed to load deck');
             }
-        }
-        loadDeck();
-    }, [modules, currentDeckId, isExternalDeck]);
+        })();
+
+        return () => { cancelled = true; };
+    }, [currentDeckId, isExternalDeck]);
 
     // Keep ref in sync for Tauri event handlers
     React.useEffect(() => {
@@ -107,6 +83,9 @@ export default function AudienceView() {
                     setCurrentIndex(data.currentIndex);
                     if (data.cameraOverlayVisible !== undefined) {
                         setCameraOverlayVisible(data.cameraOverlayVisible);
+                    }
+                    if (data.cameraOverlay !== undefined) {
+                        setCameraOverlay(data.cameraOverlay);
                     }
                     if (data.theme) {
                         setTheme(data.theme);
@@ -171,6 +150,9 @@ export default function AudienceView() {
                 if (event.data.cameraOverlayVisible !== undefined) {
                     setCameraOverlayVisible(event.data.cameraOverlayVisible);
                 }
+                if (event.data.cameraOverlay !== undefined) {
+                    setCameraOverlay(event.data.cameraOverlay);
+                }
                 if (event.data.theme) {
                     setTheme(event.data.theme);
                 }
@@ -218,37 +200,6 @@ export default function AudienceView() {
         };
     }, [slides.length, currentDeckId]);
 
-    // Render slide
-    const renderSlide = (slide) => {
-        if (!slide || !modules) return null;
-
-        const { TextSlide, ImageSlide, YouTubeSlide, IframeSlide, MDXSlide } = modules;
-
-        switch (slide.type) {
-            case 'text':
-                // Check if html is a string (external deck) or object (bundled deck)
-                if (typeof slide.html === 'string') {
-                    return (
-                        <div
-                            className="max-w-5xl mx-auto px-8 text-white"
-                            dangerouslySetInnerHTML={{ __html: slide.html }}
-                        />
-                    );
-                }
-                return <TextSlide html={slide.html} />;
-            case 'image':
-                return <ImageSlide src={slide.src} alt={slide.alt} />;
-            case 'youtube':
-                return <YouTubeSlide youtubeId={slide.youtubeId} start={slide.start} />;
-            case 'iframe':
-                return <IframeSlide src={slide.src} />;
-            case 'mdx':
-                return <MDXSlide Component={slide.Component} layout={slide.layout} />;
-            default:
-                return <div className="text-white text-center">Unknown slide type: {slide.type}</div>;
-        }
-    };
-
     const currentSlide = slides[currentIndex];
 
     // Loading/error state
@@ -277,22 +228,24 @@ export default function AudienceView() {
     // Stage view with controls
     return (
         <div className={`w-full h-full transition-colors duration-300 ${theme === 'light' ? 'light-theme' : ''}`}>
-            <SlideChrome
-                currentIndex={currentIndex}
-                totalSlides={totalSlides || slides.length}
-                onPrev={() => { }} // Navigation controlled by presenter
-                onNext={() => { }}
-                onToggleFullscreen={toggleFullscreen}
-                onToggleCameraOverlay={() => { }} // Controlled by presenter
-                canGoPrev={currentIndex > 0}
-                canGoNext={currentIndex < slides.length - 1}
-                cameraOverlay={cameraOverlay}
-                cameraOverlayVisible={cameraOverlayVisible}
-                hideControls={true}
-            >
-                {currentSlide && renderSlide(currentSlide)}
-                <JokeOverlay joke={currentJoke} onDismiss={() => setCurrentJoke(null)} />
-            </SlideChrome>
+            <SlideStage className="w-full h-full">
+                <SlideChrome
+                    currentIndex={currentIndex}
+                    totalSlides={totalSlides || slides.length}
+                    onPrev={() => { }} // Navigation controlled by presenter
+                    onNext={() => { }}
+                    onToggleFullscreen={toggleFullscreen}
+                    onToggleCameraOverlay={() => { }} // Controlled by presenter
+                    canGoPrev={currentIndex > 0}
+                    canGoNext={currentIndex < slides.length - 1}
+                    cameraOverlay={cameraOverlay}
+                    cameraOverlayVisible={cameraOverlayVisible}
+                    hideControls={true}
+                >
+                    <Slide slide={currentSlide} />
+                    <JokeOverlay joke={currentJoke} onDismiss={() => setCurrentJoke(null)} />
+                </SlideChrome>
+            </SlideStage>
         </div>
     );
 }

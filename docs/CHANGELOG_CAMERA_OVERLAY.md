@@ -90,7 +90,7 @@ Added a configurable camera overlay feature that blocks out a region of slides w
 
 The feature is ready to test:
 1. Start dev server: `npm run dev`
-2. Navigate to http://localhost:5173
+2. Navigate to http://localhost:5183
 3. View "Quick Demo" or "My Presentation" decks
 4. Camera overlay should appear in bottom-left corner (420×240px) with gradient fill starting from the screen edge
 

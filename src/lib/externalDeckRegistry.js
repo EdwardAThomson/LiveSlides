@@ -240,16 +240,50 @@ export async function openDeckFolderDialog() {
   
   try {
     const { open } = await import('@tauri-apps/plugin-dialog');
-    
+
+    // Open the picker at ~/Documents/LiveSlides (the registry's home), creating
+    // it first so the dialog actually lands there instead of falling back to ~.
+    await ensureRegistryDir();
+    const defaultPath = await getLiveSlidesDir();
+
     const selected = await open({
       directory: true,
       multiple: false,
       title: 'Select Deck Folder',
+      defaultPath,
     });
-    
+
     return selected || null;
   } catch (error) {
     console.error('[DeckRegistry] Error opening folder dialog:', error);
     return null;
+  }
+}
+
+/**
+ * Write a camera-overlay config into an external deck's deck.json so it travels
+ * with the deck folder. Tauri only.
+ * @param {string} deckPath - absolute path to the deck folder
+ * @param {object} overlay - overlay config to persist
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+export async function saveOverlayToDeckFile(deckPath, overlay) {
+  if (!isTauri()) return { success: false, error: 'Not in Tauri mode' };
+  if (!deckPath) return { success: false, error: 'No deck path' };
+
+  try {
+    const { readTextFile, writeTextFile } = await import('@tauri-apps/plugin-fs');
+    const { join } = await import('@tauri-apps/api/path');
+
+    const deckJsonPath = await join(deckPath, 'deck.json');
+    const config = JSON.parse(await readTextFile(deckJsonPath));
+    config.cameraOverlay = overlay;
+    await writeTextFile(deckJsonPath, JSON.stringify(config, null, 2));
+
+    console.log('[DeckRegistry] Saved overlay to', deckJsonPath);
+    return { success: true };
+  } catch (error) {
+    console.error('[DeckRegistry] Failed to save overlay to deck file:', error);
+    return { success: false, error: error.message || String(error) };
   }
 }
