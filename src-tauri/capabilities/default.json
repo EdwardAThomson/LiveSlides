@@ -26,7 +26,8 @@
     {
       "identifier": "fs:allow-write-text-file",
       "allow": [
-        { "path": "$DOCUMENT/**" }
+        { "path": "$DOCUMENT/**" },
+        { "path": "$HOME/**" }
       ]
     },
     {

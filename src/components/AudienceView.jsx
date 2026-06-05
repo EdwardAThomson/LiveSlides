@@ -1,6 +1,7 @@
 import React from 'react';
 import JokeOverlay from './JokeOverlay';
 import SlideChrome from './SlideChrome';
+import SlideStage from './SlideStage';
 import Slide from './slides/Slide';
 import { processDeck } from '../lib/deckLoader';
 import { loadDeck } from '../decks/registry';
@@ -83,6 +84,9 @@ export default function AudienceView() {
                     if (data.cameraOverlayVisible !== undefined) {
                         setCameraOverlayVisible(data.cameraOverlayVisible);
                     }
+                    if (data.cameraOverlay !== undefined) {
+                        setCameraOverlay(data.cameraOverlay);
+                    }
                     if (data.theme) {
                         setTheme(data.theme);
                     }
@@ -145,6 +149,9 @@ export default function AudienceView() {
                 setCurrentIndex(event.data.currentIndex);
                 if (event.data.cameraOverlayVisible !== undefined) {
                     setCameraOverlayVisible(event.data.cameraOverlayVisible);
+                }
+                if (event.data.cameraOverlay !== undefined) {
+                    setCameraOverlay(event.data.cameraOverlay);
                 }
                 if (event.data.theme) {
                     setTheme(event.data.theme);
@@ -221,22 +228,24 @@ export default function AudienceView() {
     // Stage view with controls
     return (
         <div className={`w-full h-full transition-colors duration-300 ${theme === 'light' ? 'light-theme' : ''}`}>
-            <SlideChrome
-                currentIndex={currentIndex}
-                totalSlides={totalSlides || slides.length}
-                onPrev={() => { }} // Navigation controlled by presenter
-                onNext={() => { }}
-                onToggleFullscreen={toggleFullscreen}
-                onToggleCameraOverlay={() => { }} // Controlled by presenter
-                canGoPrev={currentIndex > 0}
-                canGoNext={currentIndex < slides.length - 1}
-                cameraOverlay={cameraOverlay}
-                cameraOverlayVisible={cameraOverlayVisible}
-                hideControls={true}
-            >
-                <Slide slide={currentSlide} />
-                <JokeOverlay joke={currentJoke} onDismiss={() => setCurrentJoke(null)} />
-            </SlideChrome>
+            <SlideStage className="w-full h-full">
+                <SlideChrome
+                    currentIndex={currentIndex}
+                    totalSlides={totalSlides || slides.length}
+                    onPrev={() => { }} // Navigation controlled by presenter
+                    onNext={() => { }}
+                    onToggleFullscreen={toggleFullscreen}
+                    onToggleCameraOverlay={() => { }} // Controlled by presenter
+                    canGoPrev={currentIndex > 0}
+                    canGoNext={currentIndex < slides.length - 1}
+                    cameraOverlay={cameraOverlay}
+                    cameraOverlayVisible={cameraOverlayVisible}
+                    hideControls={true}
+                >
+                    <Slide slide={currentSlide} />
+                    <JokeOverlay joke={currentJoke} onDismiss={() => setCurrentJoke(null)} />
+                </SlideChrome>
+            </SlideStage>
         </div>
     );
 }

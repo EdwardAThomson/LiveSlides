@@ -23,6 +23,7 @@ export default function useAudienceWindow({
   slides,
   jokesConfig,
   deckId,
+  cameraOverlay,
   cameraOverlayVisible,
   theme,
   onNext,
@@ -65,8 +66,8 @@ export default function useAudienceWindow({
         const webview = new WebviewWindow('audience', {
           url: '/audience.html',
           title: 'LiveSlides - Stage View',
-          width: 1200,
-          height: 800,
+          width: 1280,
+          height: 720, // 16:9, matches the presenter preview canvas
           resizable: true,
         });
 
@@ -110,8 +111,8 @@ export default function useAudienceWindow({
       return;
     }
 
-    const width = 1200;
-    const height = 800;
+    const width = 1280;
+    const height = 720; // 16:9, matches the presenter preview canvas
     const left = window.screen.width - width - 50;
     const top = 50;
 
@@ -200,6 +201,7 @@ export default function useAudienceWindow({
       jokes: jokesConfig?.jokes || [],
       presentationStartTime,
       deckId,
+      cameraOverlay,
       cameraOverlayVisible,
       theme,
       // For external decks, send all serialized slides so audience can render them
@@ -208,7 +210,7 @@ export default function useAudienceWindow({
     };
 
     // Avoid sending duplicate state
-    const stateKey = JSON.stringify({ currentIndex, totalSlides, deckId, cameraOverlayVisible, theme });
+    const stateKey = JSON.stringify({ currentIndex, totalSlides, deckId, cameraOverlay, cameraOverlayVisible, theme });
     if (lastSentState.current === stateKey) return;
     lastSentState.current = stateKey;
 
@@ -232,7 +234,7 @@ export default function useAudienceWindow({
     } catch (e) {
       console.error('[Presenter] Failed to send state to audience window:', e);
     }
-  }, [audienceWindow, isAudienceOpen, currentIndex, totalSlides, currentSlide, slides, jokesConfig, presentationStartTime, deckId, cameraOverlayVisible, theme]);
+  }, [audienceWindow, isAudienceOpen, currentIndex, totalSlides, currentSlide, slides, jokesConfig, presentationStartTime, deckId, cameraOverlay, cameraOverlayVisible, theme]);
 
   // Handle messages from audience window
   useEffect(() => {

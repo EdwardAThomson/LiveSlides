@@ -1,19 +1,22 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import SlideChrome from './components/SlideChrome';
+import SlideStage from './components/SlideStage';
 import Transition from './components/Transition';
 import Slide from './components/slides/Slide';
 import JokeOverlay from './components/JokeOverlay';
 import DeckSelector from './components/DeckSelector';
+import CameraSettings from './components/CameraSettings';
 import useSlideNavigation from './hooks/useSlideNavigation';
 import useKeyboardNav from './hooks/useKeyboardNav';
 import useJokeManager from './hooks/useJokeManager';
 import useAudienceWindow from './hooks/useAudienceWindow';
 import PresenterTimer from './components/PresenterTimer';
 import { processDeck } from './lib/deckLoader';
-import { loadRegistry, addDeckToRegistry, openDeckFolderDialog, updateDeckLastOpened } from './lib/externalDeckRegistry';
+import { loadRegistry, addDeckToRegistry, openDeckFolderDialog, updateDeckLastOpened, saveOverlayToDeckFile } from './lib/externalDeckRegistry';
 import { loadExternalDeck } from './lib/externalDeckLoader';
 import { availableDecks, loadDeck, isBundledDeck } from './decks/registry';
+import { resolveOverlay, saveOverlayOverride, clearOverlayOverride, DEFAULT_OVERLAY } from './lib/overlaySettings';
 
 // Check if running in Tauri
 const isTauri = () => typeof window !== 'undefined' && window.__TAURI_INTERNALS__;
@@ -22,8 +25,10 @@ function App() {
   const [currentDeck, setCurrentDeck] = useState('quick-demo'); // Start with quick-demo
   const [slides, setSlides] = useState([]); // Initialize empty, will load from deck
   const [jokesConfig, setJokesConfig] = useState(null);
-  const [cameraOverlay, setCameraOverlay] = useState(null);
+  const [cameraOverlay, setCameraOverlay] = useState(null); // effective (deck default + override)
+  const [deckDefaultOverlay, setDeckDefaultOverlay] = useState(null); // raw deck.json value, for reset
   const [cameraOverlayVisible, setCameraOverlayVisible] = useState(true);
+  const [showCameraSettings, setShowCameraSettings] = useState(false);
   const [transitionKind, setTransitionKind] = useState('fade');
   const [transitionKey, setTransitionKey] = useState(0);
   const [theme, setTheme] = useState('dark');
@@ -118,6 +123,7 @@ function App() {
     slides,
     jokesConfig,
     deckId: currentDeck,
+    cameraOverlay,
     cameraOverlayVisible,
     theme,
     onNext: handleNext,
@@ -170,7 +176,9 @@ function App() {
       setCurrentExternalDeck(deckData);
       setSlides(deckData.slides);
       setJokesConfig(deckData.jokes);
-      setCameraOverlay(deckData.config.cameraOverlay || null);
+      const baseOverlay = deckData.config.cameraOverlay || null;
+      setDeckDefaultOverlay(baseOverlay);
+      setCameraOverlay(resolveOverlay(baseOverlay, deck.id));
       setCurrentDeck(deck.id);
 
       // Initialize position for this deck if not exists
@@ -205,7 +213,9 @@ function App() {
 
         setSlides(processDeck(deck.config, deck.mdxModules));
         setJokesConfig(deck.jokes ?? null);
-        setCameraOverlay(deck.config.cameraOverlay ?? null);
+        const baseOverlay = deck.config.cameraOverlay ?? null;
+        setDeckDefaultOverlay(baseOverlay);
+        setCameraOverlay(resolveOverlay(baseOverlay, currentDeck));
         if (deck.config?.theme) {
           setTheme(deck.config.theme);
         }
@@ -257,6 +267,32 @@ function App() {
 
   const toggleCameraOverlay = () => {
     setCameraOverlayVisible(prev => !prev);
+  };
+
+  // Live-edit the overlay (applies to preview + Stage) and persist per-deck.
+  const updateCameraOverlay = (next) => {
+    setCameraOverlay(next);
+    saveOverlayOverride(currentDeck, next);
+  };
+
+  // Drop the override, reverting to the deck.json default.
+  const resetCameraOverlay = () => {
+    clearOverlayOverride(currentDeck);
+    setCameraOverlay(deckDefaultOverlay);
+  };
+
+  // Tauri + external deck only: bake current settings into the deck's deck.json.
+  const isExternalDeck = !isBundledDeck(currentDeck);
+  const canSaveOverlayToDeck = isTauri() && isExternalDeck && !!currentExternalDeck?.deckPath;
+  const saveOverlayToDeck = async () => {
+    if (!canSaveOverlayToDeck) return;
+    const result = await saveOverlayToDeckFile(currentExternalDeck.deckPath, cameraOverlay ?? DEFAULT_OVERLAY);
+    if (result.success) {
+      clearOverlayOverride(currentDeck); // deck file is now the source of truth
+      setDeckDefaultOverlay(cameraOverlay ?? DEFAULT_OVERLAY);
+    } else {
+      alert(`Could not save to deck file: ${result.error}`);
+    }
   };
 
   useKeyboardNav({
@@ -344,37 +380,35 @@ function App() {
       <div className="flex-1 flex overflow-hidden">
         {/* Left panel - Current slide + Notes */}
         <div className="flex-1 flex flex-col p-4 gap-4">
-          {/* Current slide preview */}
+          {/* Current slide preview — fixed 1280×720 canvas scaled to fit,
+              a faithful WYSIWYG of the Stage window. */}
           <div
             className="flex-1 rounded-xl overflow-hidden relative cursor-pointer shadow-2xl transition-colors duration-300"
-            style={{ backgroundColor: 'var(--bg-slide)' }}
+            style={{ backgroundColor: 'var(--bg-app)' }}
             onClick={handleClick}
           >
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-[142%] h-[142%] flex items-center justify-center" style={{ transform: 'scale(0.7)' }}>
-                <div className="w-full h-full">
-                  <SlideChrome
-                    currentIndex={currentIndex}
-                    totalSlides={totalSlides}
-                    onPrev={(e) => { e?.stopPropagation(); handlePrev(); }}
-                    onNext={(e) => { e?.stopPropagation(); handleNext(); }}
-                    onToggleFullscreen={(e) => { e?.stopPropagation(); toggleFullscreen(); }}
-                    onToggleCameraOverlay={(e) => { e?.stopPropagation(); toggleCameraOverlay(); }}
-                    canGoPrev={canGoPrev}
-                    canGoNext={canGoNext}
-                    cameraOverlay={cameraOverlay}
-                    cameraOverlayVisible={cameraOverlayVisible}
-                    hideControls={true}
-                  >
-                    <AnimatePresence mode="wait">
-                      <Transition key={`${currentSlide.id}-${transitionKey}`} kind={transitionKind} active>
-                        <Slide slide={currentSlide} />
-                      </Transition>
-                    </AnimatePresence>
-                  </SlideChrome>
-                </div>
-              </div>
-            </div>
+            <SlideStage className="w-full h-full">
+              <SlideChrome
+                currentIndex={currentIndex}
+                totalSlides={totalSlides}
+                onPrev={(e) => { e?.stopPropagation(); handlePrev(); }}
+                onNext={(e) => { e?.stopPropagation(); handleNext(); }}
+                onToggleFullscreen={(e) => { e?.stopPropagation(); toggleFullscreen(); }}
+                onToggleCameraOverlay={(e) => { e?.stopPropagation(); toggleCameraOverlay(); }}
+                canGoPrev={canGoPrev}
+                canGoNext={canGoNext}
+                cameraOverlay={cameraOverlay}
+                cameraOverlayVisible={cameraOverlayVisible}
+                hideControls={true}
+                showBoundary={true}
+              >
+                <AnimatePresence mode="wait">
+                  <Transition key={`${currentSlide.id}-${transitionKey}`} kind={transitionKind} active>
+                    <Slide slide={currentSlide} />
+                  </Transition>
+                </AnimatePresence>
+              </SlideChrome>
+            </SlideStage>
             <div className="absolute top-3 left-3 px-2 py-1 bg-purple-600 rounded text-xs font-semibold z-10">
               CURRENT
             </div>
@@ -476,16 +510,26 @@ function App() {
               {isAudienceOpen ? '📺 Stage Window Open' : '📺 Open Stage Window (P)'}
             </button>
 
-            <button
-              onClick={toggleCameraOverlay}
-              className={`py-3 px-4 rounded-xl font-semibold transition-colors border ${cameraOverlayVisible
-                ? 'bg-purple-600 hover:bg-purple-500 text-white'
-                : 'bg-transparent hover:bg-white/5'
-                }`}
-              style={{ borderColor: 'var(--border-main)' }}
-            >
-              {cameraOverlayVisible ? '📹 Hide Camera (C)' : '📹 Show Camera (C)'}
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={toggleCameraOverlay}
+                className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-colors border ${cameraOverlayVisible
+                  ? 'bg-purple-600 hover:bg-purple-500 text-white'
+                  : 'bg-transparent hover:bg-white/5'
+                  }`}
+                style={{ borderColor: 'var(--border-main)' }}
+              >
+                {cameraOverlayVisible ? '📹 Hide Camera (C)' : '📹 Show Camera (C)'}
+              </button>
+              <button
+                onClick={() => setShowCameraSettings(v => !v)}
+                title="Camera overlay settings"
+                className="py-3 px-4 rounded-xl font-semibold transition-colors border hover:bg-white/5"
+                style={{ borderColor: 'var(--border-main)' }}
+              >
+                ⚙️
+              </button>
+            </div>
           </div>
 
           {/* Joke triggers */}
@@ -529,6 +573,17 @@ function App() {
 
       {/* Joke overlay */}
       <JokeOverlay joke={currentJoke} onDismiss={dismissJoke} />
+
+      {/* Camera overlay settings drawer */}
+      <CameraSettings
+        open={showCameraSettings}
+        onClose={() => setShowCameraSettings(false)}
+        config={cameraOverlay ?? DEFAULT_OVERLAY}
+        onChange={updateCameraOverlay}
+        onReset={resetCameraOverlay}
+        onSaveToDeck={saveOverlayToDeck}
+        canSaveToDeck={canSaveOverlayToDeck}
+      />
     </div>
   );
 }
