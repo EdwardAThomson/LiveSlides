@@ -240,13 +240,19 @@ export async function openDeckFolderDialog() {
   
   try {
     const { open } = await import('@tauri-apps/plugin-dialog');
-    
+
+    // Open the picker at ~/Documents/LiveSlides (the registry's home), creating
+    // it first so the dialog actually lands there instead of falling back to ~.
+    await ensureRegistryDir();
+    const defaultPath = await getLiveSlidesDir();
+
     const selected = await open({
       directory: true,
       multiple: false,
       title: 'Select Deck Folder',
+      defaultPath,
     });
-    
+
     return selected || null;
   } catch (error) {
     console.error('[DeckRegistry] Error opening folder dialog:', error);
